@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="Kopeck.Mobile.Views.RegisterPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             x:DataType="vm:RegisterViewModel"
+             Title="Create account">
+    <ScrollView><VerticalStackLayout Padding="24" Spacing="12">
+        <Entry Placeholder="Display name" Text="{Binding DisplayName}" />
+        <Entry Placeholder="Email" Keyboard="Email" Text="{Binding Email}" />
+        <Entry Placeholder="Password (8+ chars, letters and digits)" IsPassword="True" Text="{Binding Password}" />
+        <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+        <Button Text="Create account" Command="{Binding CreateAccountCommand}" IsEnabled="{Binding IsNotBusy}" />
+        <Label Text="We will email you a 6-digit code to confirm your address." FontSize="12" TextColor="Gray" />
+    </VerticalStackLayout></ScrollView>
+</ContentPage>

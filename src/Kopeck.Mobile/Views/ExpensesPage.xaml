@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="Kopeck.Mobile.Views.ExpensesPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
+             x:DataType="vm:ExpensesViewModel"
+             Title="Expenses">
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16" RowSpacing="8">
+        <VerticalStackLayout>
+            <Label Text="{Binding MonthText}" FontSize="18" FontAttributes="Bold" />
+            <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+        </VerticalStackLayout>
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
+            <CollectionView.EmptyView><Label Text="No expenses this month." TextColor="Gray" /></CollectionView.EmptyView>
+            <CollectionView.ItemTemplate><DataTemplate x:DataType="dto:ExpenseDto">
+                <SwipeView>
+                    <SwipeView.RightItems><SwipeItems><SwipeItem Text="Delete" BackgroundColor="#D32F2F"
+                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ExpensesViewModel}}, Path=DeleteCommand}" CommandParameter="{Binding .}" /></SwipeItems></SwipeView.RightItems>
+                    <Grid ColumnDefinitions="*,Auto" Padding="0,6" BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+                        <VerticalStackLayout>
+                            <Label Text="{Binding CategoryName}" FontAttributes="Bold" />
+                            <Label Text="{Binding Note}" FontSize="12" TextColor="Gray" />
+                            <Label Text="{Binding Date, StringFormat='{0:dd MMM}'}" FontSize="12" TextColor="Gray" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding Amount, StringFormat='{0:N2}'}" VerticalOptions="Center" />
+                    </Grid>
+                </SwipeView>
+            </DataTemplate></CollectionView.ItemTemplate>
+        </CollectionView>
+        <VerticalStackLayout Grid.Row="2" Spacing="6" IsVisible="{Binding CanEdit}">
+            <Picker Title="Category" ItemsSource="{Binding Categories}" ItemDisplayBinding="{Binding Name}" SelectedItem="{Binding SelectedCategory}" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Entry Placeholder="Amount" Keyboard="Numeric" Text="{Binding Amount}" />
+                <DatePicker Grid.Column="1" Date="{Binding Date}" />
+            </Grid>
+            <Entry Placeholder="Note (optional)" Text="{Binding Note}" MaxLength="200" />
+            <Button Text="Add expense" Command="{Binding AddCommand}" IsEnabled="{Binding IsNotBusy}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

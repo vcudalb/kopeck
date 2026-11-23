@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="Kopeck.Mobile.Views.SharePage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
+             x:DataType="vm:ShareViewModel"
+             Title="Share dashboard">
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16" RowSpacing="8">
+        <VerticalStackLayout>
+            <Label Text="Invite people by the email they use (or will use) to sign in. Viewers can only look; editors can add expenses, income and plans." FontSize="12" TextColor="Gray" />
+            <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+        </VerticalStackLayout>
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
+            <CollectionView.EmptyView><Label Text="Not shared with anyone." TextColor="Gray" /></CollectionView.EmptyView>
+            <CollectionView.ItemTemplate><DataTemplate x:DataType="dto:ShareDto">
+                <SwipeView>
+                    <SwipeView.RightItems><SwipeItems><SwipeItem Text="Remove" BackgroundColor="#D32F2F"
+                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ShareViewModel}}, Path=RemoveCommand}" CommandParameter="{Binding .}" /></SwipeItems></SwipeView.RightItems>
+                    <Grid ColumnDefinitions="*,Auto" Padding="0,8" BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+                        <Label Text="{Binding Email}" />
+                        <Label Grid.Column="1" Text="{Binding Role}" TextColor="Gray" />
+                    </Grid>
+                </SwipeView>
+            </DataTemplate></CollectionView.ItemTemplate>
+        </CollectionView>
+        <VerticalStackLayout Grid.Row="2" Spacing="6">
+            <Entry Placeholder="Their email" Keyboard="Email" Text="{Binding Email}" />
+            <Picker Title="Access" ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" />
+            <Button Text="Share" Command="{Binding AddCommand}" IsEnabled="{Binding IsNotBusy}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
