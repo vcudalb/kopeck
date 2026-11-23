@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="Kopeck.Mobile.Views.LoginPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             x:DataType="vm:LoginViewModel"
+             Title="Sign in">
+    <ScrollView><VerticalStackLayout Padding="24" Spacing="12">
+        <Label Text="Kopeck" FontSize="32" FontAttributes="Bold" />
+        <Entry Placeholder="Email" Keyboard="Email" Text="{Binding Email}" />
+        <Entry Placeholder="Password" IsPassword="True" Text="{Binding Password}" />
+        <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+        <Button Text="Sign in" Command="{Binding SignInCommand}" IsEnabled="{Binding IsNotBusy}" />
+        <Button Text="Create account" Command="{Binding RegisterCommand}" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" />
+        <Button Text="Forgot password?" Command="{Binding ForgotPasswordCommand}" BackgroundColor="Transparent" TextColor="Gray" />
+        <Label Text="Server address" FontSize="12" TextColor="Gray" Margin="0,24,0,0" />
+        <Entry Text="{Binding ServerUrl}" Keyboard="Url" FontSize="12" />
+    </VerticalStackLayout></ScrollView>
+</ContentPage>

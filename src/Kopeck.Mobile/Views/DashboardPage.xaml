@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="Kopeck.Mobile.Views.DashboardPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
+             x:DataType="vm:DashboardViewModel"
+             Title="Dashboard">
+    <ScrollView><VerticalStackLayout Padding="16" Spacing="12">
+        <Label Text="{Binding Title}" FontSize="20" FontAttributes="Bold" />
+        <Grid ColumnDefinitions="Auto,*,Auto">
+            <Button Text="&lt;" Command="{Binding PreviousMonthCommand}" WidthRequest="48" />
+            <Label Grid.Column="1" Text="{Binding MonthText}" HorizontalOptions="Center" VerticalOptions="Center" FontSize="18" />
+            <Button Grid.Column="2" Text="&gt;" Command="{Binding NextMonthCommand}" WidthRequest="48" />
+        </Grid>
+        <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+        <Border Style="{StaticResource Card}">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4">
+                <Label Text="Income" /><Label Grid.Column="1" Text="{Binding IncomeText}" />
+                <Label Grid.Row="1" Text="Planned expenses" /><Label Grid.Row="1" Grid.Column="1" Text="{Binding PlannedText}" />
+                <Label Grid.Row="2" Text="Actual expenses" /><Label Grid.Row="2" Grid.Column="1" Text="{Binding SpentText}" />
+                <Label Grid.Row="3" Text="Money left (income - spent)" FontAttributes="Bold" />
+                <Label Grid.Row="3" Grid.Column="1" Text="{Binding NetText}" FontAttributes="Bold" TextColor="{Binding NetColor}" />
+            </Grid>
+        </Border>
+        <Label Text="{Binding OverText}" IsVisible="{Binding HasOverspend}" Style="{StaticResource ErrorLabel}" FontAttributes="Bold" />
+        <Label Text="Categories: left vs plan" FontSize="16" FontAttributes="Bold" />
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Rows}" Spacing="8">
+            <BindableLayout.ItemTemplate><DataTemplate x:DataType="vm:CategoryRow">
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{Binding Name}" FontAttributes="Bold" />
+                        <ProgressBar Progress="{Binding Progress}" ProgressColor="{Binding StatusColor}" />
+                        <Grid ColumnDefinitions="*,*">
+                            <Label Text="{Binding PlannedText}" FontSize="12" />
+                            <Label Grid.Column="1" Text="{Binding SpentText}" FontSize="12" HorizontalTextAlignment="End" />
+                        </Grid>
+                        <Label Text="{Binding LeftText}" TextColor="{Binding StatusColor}" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                </Border>
+            </DataTemplate></BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+        <Label Text="Income streams" FontSize="16" FontAttributes="Bold" />
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Streams}">
+            <BindableLayout.ItemTemplate><DataTemplate x:DataType="dto:IncomeStreamSummaryDto">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="{Binding Name}" />
+                    <Label Grid.Column="1" Text="{Binding Amount, StringFormat='{0:N2}'}" />
+                </Grid>
+            </DataTemplate></BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+            <Button Text="Expenses" Command="{Binding OpenExpensesCommand}" />
+            <Button Grid.Column="1" Text="Income" Command="{Binding OpenIncomeCommand}" />
+            <Button Grid.Row="1" Text="Plan" Command="{Binding OpenPlanCommand}" />
+            <Button Grid.Row="1" Grid.Column="1" Text="Categories" Command="{Binding OpenCategoriesCommand}" />
+            <Button Grid.Row="2" Grid.ColumnSpan="2" Text="Share dashboard" Command="{Binding OpenShareCommand}" IsVisible="{Binding IsOwner}" />
+            <Button Grid.Row="2" Grid.ColumnSpan="2" Text="Leave shared budget" Command="{Binding LeaveCommand}" BackgroundColor="Gray">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsOwner}" Value="True"><Setter Property="IsVisible" Value="False" /></DataTrigger>
+                </Button.Triggers>
+            </Button>
+        </Grid>
+    </VerticalStackLayout></ScrollView>
+</ContentPage>

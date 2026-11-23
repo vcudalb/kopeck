@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="Kopeck.Mobile.Views.ResetPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             x:DataType="vm:ResetViewModel"
+             Title="Reset password">
+    <ScrollView><VerticalStackLayout Padding="24" Spacing="12">
+        <Entry Placeholder="Email" Keyboard="Email" Text="{Binding Email}" />
+        <Button Text="Email me a code" Command="{Binding SendCodeCommand}" IsEnabled="{Binding IsNotBusy}" />
+        <Label Text="{Binding Info}" TextColor="Gray" />
+        <Entry Placeholder="6-digit code" Keyboard="Numeric" MaxLength="6" Text="{Binding Code}" />
+        <Entry Placeholder="New password" IsPassword="True" Text="{Binding NewPassword}" />
+        <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+        <Button Text="Change password" Command="{Binding ResetCommand}" IsEnabled="{Binding IsNotBusy}" />
+    </VerticalStackLayout></ScrollView>
+</ContentPage>

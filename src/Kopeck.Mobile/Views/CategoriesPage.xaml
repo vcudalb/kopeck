@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="Kopeck.Mobile.Views.CategoriesPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
+             x:DataType="vm:CategoriesViewModel"
+             Title="Categories">
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16" RowSpacing="8">
+        <VerticalStackLayout>
+            <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+        </VerticalStackLayout>
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
+            <CollectionView.EmptyView><Label Text="No categories yet (e.g. Home, Bills, Fuel)." TextColor="Gray" /></CollectionView.EmptyView>
+            <CollectionView.ItemTemplate><DataTemplate x:DataType="dto:CategoryDto">
+                <SwipeView>
+                    <SwipeView.RightItems><SwipeItems>
+                        <SwipeItem Text="Rename" BackgroundColor="Gray" Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=RenameCommand}" CommandParameter="{Binding .}" />
+                        <SwipeItem Text="Delete" BackgroundColor="#D32F2F" Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=DeleteCommand}" CommandParameter="{Binding .}" />
+                    </SwipeItems></SwipeView.RightItems>
+                    <Label Text="{Binding Name}" Padding="0,10" BackgroundColor="{AppThemeBinding Light=White, Dark=Black}" />
+                </SwipeView>
+            </DataTemplate></CollectionView.ItemTemplate>
+        </CollectionView>
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding CanEdit}">
+            <Entry Placeholder="New category" Text="{Binding NewName}" MaxLength="80" />
+            <Button Grid.Column="1" Text="Add" Command="{Binding AddCommand}" />
+        </Grid>
+    </Grid>
+</ContentPage>
