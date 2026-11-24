@@ -7,7 +7,7 @@ Status key: ✅ implemented and covered by automated tests · 🟡 implemented, 
 
 | # | Requirement | Status | How it is met |
 |---|---|---|---|
-| R1 | MAUI app for Android and iOS | 🟡 | .NET 8 MAUI project (`src/Kopeck.Mobile`). The Android build passes in CI. The iOS build has never been run and needs a Mac with Xcode. The app has not been run on a device or emulator. |
+| R1 | MAUI app for Android and iOS | 🟡 | .NET 8 MAUI project (`src/Kopeck.Mobile`). The Android build passes in CI, and the app runs on the Android emulator (API 34), where the main flows were checked by hand. Not yet run on a real Android phone. The iOS build has never been run and needs a Mac with Xcode. |
 | R2 | Create new categories | ✅ | Categories screen: add, rename and delete. Names are unique per budget. A category with expenses cannot be deleted (409). |
 | R3 | Assign categories to expenses | ✅ | Each expense requires a category. Expenses screen: add, edit and delete. |
 | R4 | Multiple revenue streams | ✅ | Income screen: any number of named streams, with income entries dated per month. |
@@ -52,9 +52,10 @@ Not carried over, on purpose: the MDL/EUR savings and conversion sheet (a budget
 
 ## 5. Verification status
 
-- ✅ **API:** 24 automated tests pass. They cover sign-up, login, lockout, password reset, the planned-vs-real maths, sharing roles, cascade delete and decimal validation.
+- ✅ **API:** 39 automated tests pass. They cover sign-up, login, lockout, password reset, the planned-vs-real maths, sharing roles, cascade delete and decimal validation.
 - ✅ **Android:** the app compiles in CI.
-- 🟡 **Not tested:** screens and flows have not been tried on a real device or emulator.
+- ✅ **Android emulator:** checked by hand on 2026-11-24 on an API 34 emulator against a local API: registration with the emailed code, sign-in, and the budget screens work as required. Setup steps are in [SETUP.md](SETUP.md).
+- 🟡 **Not tested:** a real Android phone, and automated UI tests (there are none).
 - ❌ **iOS:** never built or run.
 
 ## 6. Known gaps
