@@ -7,13 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Budgets;
 
-public interface ISharingService
-{
-    Task<IReadOnlyList<ShareDto>> ListAsync(Guid budgetId, CancellationToken ct);
-    Task<Result<ShareDto>> ShareAsync(Guid budgetId, ShareRequest request, CancellationToken ct);
-    Task<Result> RevokeAsync(Guid budgetId, Guid shareId, CancellationToken ct);
-}
-
 /// <summary>The owner shares a budget by email as Viewer or Editor. Sharing again with the same email changes the role.</summary>
 public sealed class SharingService(IKopeckDbContext db, ICurrentUser user) : ISharingService
 {
@@ -25,8 +18,7 @@ public sealed class SharingService(IKopeckDbContext db, ICurrentUser user) : ISh
 
     public async Task<Result<ShareDto>> ShareAsync(Guid budgetId, ShareRequest request, CancellationToken ct)
     {
-        var email = DomainRules.NormalizeEmail(request.Email);
-        if (email is null) return Error.Validation("Enter a valid email address.");
+        var email = DomainRules.NormalizeEmail(request.Email)!;   // the request validator guarantees a valid address
         if (email == user.Email) return Error.Validation("You already own this budget.");
         if (request.Role.ToAccessLevel() is not { } level) return Error.Validation("Unknown access level.");
 

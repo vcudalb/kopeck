@@ -7,16 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-/// <summary>One budget in the list.</summary>
-public sealed class BudgetItem(BudgetDto budget)
-{
-    public BudgetDto Budget { get; } = budget;
-    public string Name => Budget.Name;
-    public string Initial => MoreViewModel.Initial(Budget.Name);
-    public string Details => Budget.Role == BudgetRole.Owner ? Budget.Currency : $"{Budget.Currency} · shared by {Budget.OwnerEmail}";
-    public string RoleText => Budget.Role.ToString();
-}
-
 public partial class BudgetsViewModel(
     IBudgetsApi budgets, IUserSession session, AppState state, INavigationService nav, IDialogService dialogs, ILogger<BudgetsViewModel> logger)
     : BaseViewModel(logger)
@@ -62,14 +52,5 @@ public partial class BudgetsViewModel(
         session.SignOut();
         state.Reset();
         await nav.GoToAsync("//login");
-    }
-}
-
-internal static class CollectionExtensions
-{
-    public static void ReplaceWith<T>(this ObservableCollection<T> collection, IEnumerable<T> items)
-    {
-        collection.Clear();
-        foreach (var item in items) collection.Add(item);
     }
 }

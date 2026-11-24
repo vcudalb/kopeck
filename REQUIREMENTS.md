@@ -44,7 +44,7 @@ Not carried over, on purpose: the MDL/EUR savings and conversion sheet (a budget
 | Part | Choice |
 |---|---|
 | App | .NET 8 MAUI, MVVM with CommunityToolkit.Mvvm. Shell navigation: sign-in → budget list → bottom tabs (Overview, Expenses, Income, Plan, More) |
-| API | ASP.NET Core 8 minimal API, EF Core with SQLite and migrations |
+| API | ASP.NET Core 8 Web API with controllers, EF Core with SQLite and migrations |
 | Auth and email | JWT bearer tokens, MailKit over SMTP |
 | Shared | `Kopeck.Contracts` (DTOs used by app and API) |
 | Tests | xUnit with `WebApplicationFactory` |

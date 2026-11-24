@@ -10,24 +10,6 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Kopeck.Infrastructure.Identity;
 
-public sealed class JwtOptions
-{
-    public const string Section = "Jwt";
-
-    /// <summary>Signing secret (32+ bytes). Required outside Development; set through the Jwt__Key environment variable or a secret store.</summary>
-    public string? Key { get; set; }
-
-    public int LifetimeHours { get; set; } = 24 * 7;
-}
-
-/// <summary>Claim names shared by token creation (here) and the web layer that reads them.</summary>
-public static class KopeckClaims
-{
-    public const string UserId = "sub";
-    public const string Email = "email";
-    public const string Name = "name";
-}
-
 /// <summary>Signs and validates JWTs. The key comes from configuration and is never hard-coded.</summary>
 public sealed class JwtTokenService : ITokenService
 {

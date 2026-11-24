@@ -2,16 +2,10 @@ using Kopeck.Application.Abstractions;
 using Kopeck.Application.Common;
 using Kopeck.Contracts;
 using Kopeck.Domain.Budgets;
-using Kopeck.Domain.Common;
 using Kopeck.Domain.Planning;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Planning;
-
-public interface ISummaryService
-{
-    Task<MonthSummaryDto> BuildAsync(Budget budget, DateOnly month, CancellationToken ct);
-}
 
 /// <summary>
 /// The dashboard: planned vs real per category (maths in <see cref="PlanVsActual"/>) plus income per stream.

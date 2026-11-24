@@ -8,18 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Expenses;
 
-public interface IExpenseService
-{
-    Task<IReadOnlyList<ExpenseDto>> ListAsync(Guid budgetId, DateOnly month, Guid? categoryId, CancellationToken ct);
-    Task<Result<ExpenseDto>> CreateAsync(Guid budgetId, ExpenseRequest request, CancellationToken ct);
-    Task<Result<ExpenseDto>> UpdateAsync(Guid budgetId, Guid expenseId, ExpenseRequest request, CancellationToken ct);
-    Task<Result> DeleteAsync(Guid budgetId, Guid expenseId, CancellationToken ct);
-}
-
 /// <summary>Every expense belongs to a category of the same budget.</summary>
 public sealed class ExpenseService(IKopeckDbContext db, ICurrentUser user) : IExpenseService
 {
-    private static readonly Error InvalidAmount = Error.Validation("Amount must be greater than 0 (max 2 decimals).");
     private static readonly Error UnknownCategory = Error.Validation("Unknown category.");
 
     public async Task<IReadOnlyList<ExpenseDto>> ListAsync(Guid budgetId, DateOnly month, Guid? categoryId, CancellationToken ct)
@@ -35,7 +26,6 @@ public sealed class ExpenseService(IKopeckDbContext db, ICurrentUser user) : IEx
 
     public async Task<Result<ExpenseDto>> CreateAsync(Guid budgetId, ExpenseRequest request, CancellationToken ct)
     {
-        if (!DomainRules.IsValidAmount(request.Amount)) return InvalidAmount;
         var category = await FindCategoryAsync(budgetId, request.CategoryId, ct);
         if (category is null) return UnknownCategory;
 
@@ -49,7 +39,6 @@ public sealed class ExpenseService(IKopeckDbContext db, ICurrentUser user) : IEx
     {
         var expense = await db.Expenses.InBudget(budgetId).FirstOrDefaultAsync(e => e.Id == expenseId, ct);
         if (expense is null) return Error.NotFound;
-        if (!DomainRules.IsValidAmount(request.Amount)) return InvalidAmount;
         var category = await FindCategoryAsync(budgetId, request.CategoryId, ct);
         if (category is null) return UnknownCategory;
 

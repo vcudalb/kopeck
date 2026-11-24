@@ -37,6 +37,9 @@ public static class DomainRules
         return code.Length is >= 3 and <= MaxCurrencyLength && code.All(char.IsLetter) ? code : null;
     }
 
+    /// <summary>Exactly 6 digits, the format of the codes sent by email.</summary>
+    public static bool IsOneTimeCode(string? code) => code is { Length: 6 } && code.All(char.IsAsciiDigit);
+
     /// <summary>Lower-cased address, or null when it is not a plain valid email.</summary>
     public static string? NormalizeEmail(string? email)
     {

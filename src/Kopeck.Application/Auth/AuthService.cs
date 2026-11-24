@@ -7,16 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Auth;
 
-public interface IAuthService
-{
-    Task<Result> RegisterAsync(RegisterRequest request);
-    Task<Result> ResendCodeAsync(EmailRequest request);
-    Task<Result<AuthResponse>> VerifyEmailAsync(EmailCodeRequest request);
-    Task<Result<AuthResponse>> LoginAsync(LoginRequest request);
-    Task<Result> ForgotPasswordAsync(EmailRequest request);
-    Task<Result> ResetPasswordAsync(ResetPasswordRequest request);
-}
-
 /// <summary>
 /// Sign-up, sign-in and password reset.
 /// Security notes:
@@ -34,10 +24,7 @@ public sealed class AuthService(IKopeckDbContext db, IPasswordHasher passwords, 
 
     public async Task<Result> RegisterAsync(RegisterRequest request)
     {
-        var email = DomainRules.NormalizeEmail(request.Email);
-        if (email is null) return Error.Validation("Enter a valid email address.");
-        if (PasswordPolicy.Validate(request.Password) is { } passwordError) return Error.Validation(passwordError);
-        if (!DomainRules.IsValidName(request.DisplayName)) return Error.Validation($"Enter a display name (max {DomainRules.MaxNameLength} characters).");
+        var email = DomainRules.NormalizeEmail(request.Email)!;   // the request validator guarantees a valid address
 
         var now = clock.GetUtcNow();
         var existing = await FindAsync(email);
@@ -118,7 +105,6 @@ public sealed class AuthService(IKopeckDbContext db, IPasswordHasher passwords, 
 
     public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request)
     {
-        if (PasswordPolicy.Validate(request.NewPassword) is { } passwordError) return Error.Validation(passwordError);
         var user = await FindAsync(request.Email);
         if (user is null) return InvalidCode;
 
@@ -140,19 +126,4 @@ public sealed class AuthService(IKopeckDbContext db, IPasswordHasher passwords, 
     }
 
     private Task SendAsync(string to, (string Subject, string Body) email) => mail.SendAsync(to, email.Subject, email.Body);
-}
-
-/// <summary>Email texts for the account flows, kept together so wording stays consistent.</summary>
-internal static class AuthEmails
-{
-    private static readonly string Minutes = $"{User.CodeLifetime.TotalMinutes:0}";
-
-    public static (string Subject, string Body) VerificationCode(string code) =>
-        ("Confirm your Kopeck account", $"Your verification code is {code}. It expires in {Minutes} minutes.");
-
-    public static (string Subject, string Body) ResetCode(string code) =>
-        ("Reset your Kopeck password", $"Your password reset code is {code}. It expires in {Minutes} minutes. If you didn't ask for this, ignore this email.");
-
-    public static (string Subject, string Body) AlreadyRegistered() =>
-        ("Kopeck account", "Someone tried to register with this email, but an account already exists. If it was you, sign in or use 'Forgot password'.");
 }

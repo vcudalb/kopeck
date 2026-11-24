@@ -4,7 +4,7 @@ A mobile budgeting app that replaces the "Main Buget.xlsx" workflow: categories 
 how much a category went over its plan, multiple income streams, and sharing a budget with other people.
 
 - **App:** .NET 8 MAUI for Android and iOS (MVVM)
-- **API:** ASP.NET Core 8 minimal API, Clean Architecture, EF Core + SQLite
+- **API:** ASP.NET Core 8 Web API with controllers, Clean Architecture, EF Core + SQLite
 - **Everything is open source** (see [Packages](#packages))
 
 ## Contents
@@ -139,7 +139,9 @@ src/
     Abstractions/                       IKopeckDbContext, ICurrentUser, IEmailSender, IPasswordHasher, ITokenService
     Common/                             Result, Error, mappings (domain → DTO), InBudget() query filter
     Auth/ Budgets/ Categories/ Expenses/ Incomes/ Planning/   one service per feature
-    DependencyInjection.cs              AddApplication()
+    Validation/                         IRequestValidator<T>, IRequestPipelineExecutor, ValidationResult
+      Validators/                       one validator per request (format rules only)
+    DependencyInjection.cs              AddApplication() (validators registered by assembly scan)
   Kopeck.Infrastructure/
     Persistence/                        KopeckDb, Configurations/ (one per entity), Migrations/, DatabaseErrors
     Identity/                           JwtTokenService + JwtOptions, IdentityPasswordHasher
@@ -147,11 +149,11 @@ src/
     DependencyInjection.cs              AddInfrastructure()
   Kopeck.Api/
     Program.cs                          composition root
-    Http/                               WebApiSetup, BudgetAccessFilter, ResultHttpExtensions, HttpCurrentUser,
-                                        EndpointModules, UniqueConstraintExceptionHandler
-    Endpoints/                          one IEndpointModule per feature
+    Controllers/                        ApiControllerBase (maps Result → HTTP) + one controller per resource
+    Filters/                            BudgetAccessAttribute + BudgetAccessFilter, RequestValidationFilter<T>
+    Http/                               WebApiSetup, HttpCurrentUser, RateLimitOptions, UniqueConstraintExceptionHandler
   Kopeck.Mobile/
-    Services/                           IApiClient, typed feature APIs (KopeckApi.cs), IUserSession, IServerSettings,
+    Services/                           IApiClient, typed feature APIs (IAuthApi, IExpensesApi, ...), IUserSession, IServerSettings,
                                         AppState, navigation / dialog services
     ViewModels/                         BaseViewModel, BudgetViewModel, one view model per screen
     Views/                              BasePage + XAML pages (compiled bindings, x:DataType)
@@ -163,11 +165,12 @@ tests/Kopeck.Api.Tests/                 unit tests + integration tests over the 
 ```
 HTTP request
   → rate limiter (auth routes) → JWT authentication
-  → BudgetAccessFilter            resolves the caller's access to /api/budgets/{budgetId}; none → 404
-  → RequireAccess(Editor/Owner)   minimum level for the route; too low → 403
-  → endpoint (one line)           calls the feature service
-  → service (Application)         validates, loads entities, calls domain methods, SaveChanges (one transaction)
-  → Result / Result<T>            ResultHttpExtensions maps it: 200/201/204, 400, 401, 403, 404, 409
+  → [BudgetAccess(level)]         resolves the caller's access to /api/budgets/{budgetId}: none → 404, too low → 403
+  → RequestValidationFilter<T>    [ServiceFilter] on actions with a body: runs IRequestValidator<T>, all failures → one 400
+  → controller action (one line)  calls the feature service
+  → service (Application)         rules that need the database or the user (unknown category, duplicate name,
+                                  sharing with yourself), loads entities, calls domain methods, SaveChanges (one transaction)
+  → Result / Result<T>            ApiControllerBase maps it: 200/201/204, 400, 401, 403, 404, 409
 ```
 
 A save that loses a race on a unique index (two identical names at once) is turned into **409** by
@@ -183,11 +186,12 @@ A save that loses a race on a unique index (two identical names at once) is turn
 | Result pattern | Expected failures are values (`Error.Validation/NotFound/Conflict/Forbidden/Unauthorized`), exceptions are for the unexpected |
 | Single responsibility | One service per feature; one `IEntityTypeConfiguration` per entity; one place maps results to HTTP |
 | Interface segregation | Services are injected by narrow interfaces; the app's API is split per feature (`IAuthApi`, `IExpensesApi`, ...) |
-| Open/closed | Endpoint modules (`IEndpointModule`) are discovered at startup: a new feature is a new class, not an edit to `Program.cs` |
+| Open/closed | Controllers are discovered by MVC: a new feature is a new controller, not an edit to `Program.cs` |
 | Strategy | Email transport: SMTP in real environments, the log in Development |
 | Producer / consumer | Emails go into a bounded `Channel`; a `BackgroundService` sends them |
 | Adapter | `IdentityPasswordHasher` over ASP.NET Identity, `HttpCurrentUser` over the JWT claims |
-| Pipeline / chain of responsibility | Endpoint filters for budget access and minimum role |
+| Pipeline / chain of responsibility | MVC action filters: budget access and minimum role, then request validation |
+| Validator | `IRequestValidator<T>` per request, run by `RequestValidationFilter<T>`; a test fails if an action forgets the filter |
 | Options pattern | `JwtOptions`, `SmtpOptions`, `RateLimitOptions` bound from configuration |
 | MVVM + gateway (app) | View models use typed feature APIs over one `IApiClient`; platform storage injected (`ISecureStorage`, `IPreferences`) |
 | Template method (app) | `BasePage` forwards appear/disappear to the view model; `BaseViewModel.RunAsync` handles busy flag, errors and cancellation |

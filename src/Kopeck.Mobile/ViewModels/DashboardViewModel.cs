@@ -6,51 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-/// <summary>Status colours in one place, so every screen speaks the same visual language.</summary>
-internal static class StatusPalette
-{
-    public static readonly Color Over = Color.FromArgb("#C62828");
-    public static readonly Color Warning = Color.FromArgb("#F9A825");
-    public static readonly Color Unplanned = Color.FromArgb("#6A1B9A");
-    public static readonly Color Unused = Color.FromArgb("#9E9E9E");
-    public static readonly Color Good = Color.FromArgb("#2E7D32");
-
-    public static Color For(CategoryStatus status) => status switch
-    {
-        CategoryStatus.Over => Over,
-        CategoryStatus.Warning => Warning,
-        CategoryStatus.Unplanned => Unplanned,
-        CategoryStatus.Unused => Unused,
-        _ => Good,
-    };
-}
-
-/// <summary>Presentation of one category's planned-vs-real numbers.</summary>
-public sealed class CategoryRow(CategorySummaryDto c, string currency)
-{
-    public string Name => c.Name;
-
-    /// <summary>"120.00 of 300.00 EUR" (or just the spent amount when there is no plan).</summary>
-    public string SpentOfPlanText => c.Planned > 0 ? $"{c.Spent:N2} of {c.Planned:N2} {currency}" : $"{c.Spent:N2} {currency} spent";
-
-    public string PercentText => c.Status == CategoryStatus.Unused ? "" : $"{c.PercentUsed:0}%";
-
-    /// <summary>The key line: money left, or by how much the category is over its plan.</summary>
-    public string LeftText => c.Status switch
-    {
-        CategoryStatus.Over => $"Over by {c.OverBy:N2}",
-        CategoryStatus.Unplanned => "Not planned",
-        CategoryStatus.Unused => "No plan, no spending",
-        _ => $"{c.Left:N2} left",
-    };
-
-    public double Progress => Math.Min(1.0, (double)c.PercentUsed / 100.0);
-    public Color StatusColor => StatusPalette.For(c.Status);
-}
-
-/// <summary>A labelled amount, e.g. one income stream.</summary>
-public sealed record AmountRow(string Name, string AmountText);
-
 public partial class DashboardViewModel(IBudgetsApi budgets, AppState state, IDialogService dialogs, ILogger<DashboardViewModel> logger)
     : BudgetViewModel(state, dialogs, logger)
 {
