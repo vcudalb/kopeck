@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-/// <summary>Income entries, booked against any number of revenue streams.</summary>
+/// <summary>Income entries of the open month, booked against any number of revenue streams.</summary>
 public partial class IncomeViewModel(IIncomeApi income, AppState state, IDialogService dialogs, ILogger<IncomeViewModel> logger)
     : BudgetViewModel(state, dialogs, logger)
 {
@@ -18,8 +18,13 @@ public partial class IncomeViewModel(IIncomeApi income, AppState state, IDialogS
     [ObservableProperty] private string _amount = "";
     [ObservableProperty] private string _note = "";
     [ObservableProperty] private DateTime _date = state.DefaultEntryDate;
+    [ObservableProperty] private string _totalText = "";
 
-    public override Task OnAppearingAsync() => RunAsync(ReloadAsync);
+    protected override void OnFormOpening()
+    {
+        (Amount, Note) = ("", "");
+        Date = State.DefaultEntryDate;
+    }
 
     [RelayCommand]
     private async Task AddStreamAsync()
@@ -28,8 +33,8 @@ public partial class IncomeViewModel(IIncomeApi income, AppState state, IDialogS
         if (string.IsNullOrWhiteSpace(name)) return;
         await RunAsync(async ct =>
         {
-            var stream = await income.CreateStreamAsync(BudgetId, new IncomeStreamRequest(name), ct);
-            await ReloadAsync(ct);
+            var stream = await income.CreateStreamAsync(BudgetId, new IncomeStreamRequest(name.Trim()), ct);
+            await LoadAsync(ct);
             SelectedStream = Streams.FirstOrDefault(s => s.Id == stream.Id);
         });
     }
@@ -37,12 +42,12 @@ public partial class IncomeViewModel(IIncomeApi income, AppState state, IDialogS
     [RelayCommand]
     private Task AddAsync() => RunAsync(async ct =>
     {
-        if (SelectedStream is null) { Error = "Add an income stream first."; return; }
+        if (SelectedStream is null) { Error = "Add a revenue stream first."; return; }
         if (!Money.TryParse(Amount, out var amount)) { Error = "Enter a valid amount."; return; }
 
         await income.CreateAsync(BudgetId, new IncomeRequest(SelectedStream.Id, DateOnly.FromDateTime(Date), amount, Note), ct);
-        (Amount, Note) = ("", "");
-        await ReloadAsync(ct);
+        IsFormOpen = false;
+        await LoadAsync(ct);
     });
 
     [RelayCommand]
@@ -50,14 +55,14 @@ public partial class IncomeViewModel(IIncomeApi income, AppState state, IDialogS
         ConfirmThenRunAsync("Delete income", $"{entry.StreamName} {entry.Amount:N2}?", "Delete", async ct =>
         {
             await income.DeleteAsync(BudgetId, entry.Id, ct);
-            await ReloadAsync(ct);
+            await LoadAsync(ct);
         });
 
-    private async Task ReloadAsync(CancellationToken ct)
+    protected override async Task LoadAsync(CancellationToken ct)
     {
-        RefreshMonthText();
         Streams.ReplaceWith(await income.ListStreamsAsync(BudgetId, ct));
         SelectedStream = Streams.FirstOrDefault(s => s.Id == SelectedStream?.Id) ?? Streams.FirstOrDefault();
         Items.ReplaceWith(await income.ListAsync(BudgetId, State.Month, ct));
+        TotalText = $"{Items.Sum(i => i.Amount):N2} {Currency}";
     }
 }

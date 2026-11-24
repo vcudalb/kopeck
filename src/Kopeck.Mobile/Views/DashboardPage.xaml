@@ -4,65 +4,92 @@
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
-             xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
+             xmlns:controls="clr-namespace:Kopeck.Mobile.Views.Controls"
              x:DataType="vm:DashboardViewModel"
-             Title="Dashboard">
-    <ScrollView><VerticalStackLayout Padding="16" Spacing="12">
-        <Label Text="{Binding Title}" FontSize="20" FontAttributes="Bold" />
-        <Grid ColumnDefinitions="Auto,*,Auto">
-            <Button Text="&lt;" Command="{Binding PreviousMonthCommand}" WidthRequest="48" />
-            <Label Grid.Column="1" Text="{Binding MonthText}" HorizontalOptions="Center" VerticalOptions="Center" FontSize="18" />
-            <Button Grid.Column="2" Text="&gt;" Command="{Binding NextMonthCommand}" WidthRequest="48" />
-        </Grid>
-        <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
-        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
-        <Border Style="{StaticResource Card}">
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4">
-                <Label Text="Income" /><Label Grid.Column="1" Text="{Binding IncomeText}" />
-                <Label Grid.Row="1" Text="Planned expenses" /><Label Grid.Row="1" Grid.Column="1" Text="{Binding PlannedText}" />
-                <Label Grid.Row="2" Text="Actual expenses" /><Label Grid.Row="2" Grid.Column="1" Text="{Binding SpentText}" />
-                <Label Grid.Row="3" Text="Money left (income - spent)" FontAttributes="Bold" />
-                <Label Grid.Row="3" Grid.Column="1" Text="{Binding NetText}" FontAttributes="Bold" TextColor="{Binding NetColor}" />
-            </Grid>
-        </Border>
-        <Label Text="{Binding OverText}" IsVisible="{Binding HasOverspend}" Style="{StaticResource ErrorLabel}" FontAttributes="Bold" />
-        <Label Text="Categories: left vs plan" FontSize="16" FontAttributes="Bold" />
-        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Rows}" Spacing="8">
-            <BindableLayout.ItemTemplate><DataTemplate x:DataType="vm:CategoryRow">
-                <Border Style="{StaticResource Card}">
-                    <VerticalStackLayout Spacing="4">
-                        <Label Text="{Binding Name}" FontAttributes="Bold" />
-                        <ProgressBar Progress="{Binding Progress}" ProgressColor="{Binding StatusColor}" />
-                        <Grid ColumnDefinitions="*,*">
-                            <Label Text="{Binding PlannedText}" FontSize="12" />
-                            <Label Grid.Column="1" Text="{Binding SpentText}" FontSize="12" HorizontalTextAlignment="End" />
+             Title="{Binding BudgetName}">
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16" Spacing="12">
+                <Label Text="{Binding SharedText}" Style="{StaticResource Caption}" IsVisible="{Binding IsShared}" />
+                <controls:MonthSwitcher />
+
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                </Border>
+
+                <!-- Money left this month -->
+                <Border Style="{StaticResource HeroCard}">
+                    <VerticalStackLayout Spacing="14">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding NetCaption}" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="13" />
+                            <Label Text="{Binding NetText}" TextColor="{StaticResource OnPrimary}" FontSize="32" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                            <VerticalStackLayout>
+                                <Label Text="Income" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="12" />
+                                <Label Text="{Binding IncomeText}" TextColor="{StaticResource OnPrimary}" FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1">
+                                <Label Text="Planned" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="12" />
+                                <Label Text="{Binding PlannedText}" TextColor="{StaticResource OnPrimary}" FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="2">
+                                <Label Text="Spent" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="12" />
+                                <Label Text="{Binding SpentText}" TextColor="{StaticResource OnPrimary}" FontAttributes="Bold" />
+                            </VerticalStackLayout>
                         </Grid>
-                        <Label Text="{Binding LeftText}" TextColor="{Binding StatusColor}" FontAttributes="Bold" />
                     </VerticalStackLayout>
                 </Border>
-            </DataTemplate></BindableLayout.ItemTemplate>
-        </VerticalStackLayout>
-        <Label Text="Income streams" FontSize="16" FontAttributes="Bold" />
-        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Streams}">
-            <BindableLayout.ItemTemplate><DataTemplate x:DataType="dto:IncomeStreamSummaryDto">
-                <Grid ColumnDefinitions="*,Auto">
-                    <Label Text="{Binding Name}" />
-                    <Label Grid.Column="1" Text="{Binding Amount, StringFormat='{0:N2}'}" />
-                </Grid>
-            </DataTemplate></BindableLayout.ItemTemplate>
-        </VerticalStackLayout>
-        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
-            <Button Text="Expenses" Command="{Binding OpenExpensesCommand}" />
-            <Button Grid.Column="1" Text="Income" Command="{Binding OpenIncomeCommand}" />
-            <Button Grid.Row="1" Text="Plan" Command="{Binding OpenPlanCommand}" />
-            <Button Grid.Row="1" Grid.Column="1" Text="Categories" Command="{Binding OpenCategoriesCommand}" />
-            <Button Grid.Row="2" Grid.ColumnSpan="2" Text="Share dashboard" Command="{Binding OpenShareCommand}" IsVisible="{Binding IsOwner}" />
-            <Button Grid.Row="2" Grid.ColumnSpan="2" Text="Leave shared budget" Command="{Binding LeaveCommand}" BackgroundColor="Gray">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsOwner}" Value="True"><Setter Property="IsVisible" Value="False" /></DataTrigger>
-                </Button.Triggers>
-            </Button>
-            <Button Grid.Row="3" Grid.ColumnSpan="2" Text="Delete budget" Command="{Binding DeleteBudgetCommand}" IsVisible="{Binding IsOwner}" BackgroundColor="#D32F2F" />
-        </Grid>
-    </VerticalStackLayout></ScrollView>
+
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasOverspend}">
+                    <Label Text="{Binding OverText}" Style="{StaticResource ErrorLabel}" FontAttributes="Bold" />
+                </Border>
+
+                <!-- Categories: planned vs real -->
+                <Label Text="CATEGORIES" Style="{StaticResource SectionHeader}" />
+                <Border Style="{StaticResource Card}" IsVisible="{Binding HasRows, Converter={StaticResource InvertBool}}">
+                    <Label Text="No categories yet. Add them under More → Categories, then set amounts on the Plan tab."
+                           Style="{StaticResource Muted}" />
+                </Border>
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Rows}" Spacing="8">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CategoryRow">
+                            <Border Style="{StaticResource Card}" Padding="14">
+                                <VerticalStackLayout Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Text="{Binding Name}" Style="{StaticResource Strong}" LineBreakMode="TailTruncation" />
+                                        <Label Grid.Column="1" Text="{Binding PercentText}" Style="{StaticResource Caption}" FontAttributes="Bold" />
+                                    </Grid>
+                                    <ProgressBar Progress="{Binding Progress}" ProgressColor="{Binding StatusColor}" />
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Text="{Binding SpentOfPlanText}" Style="{StaticResource Caption}" />
+                                        <Label Grid.Column="1" Text="{Binding LeftText}" TextColor="{Binding StatusColor}" FontAttributes="Bold" FontSize="13" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <!-- Income streams -->
+                <Label Text="INCOME STREAMS" Style="{StaticResource SectionHeader}" />
+                <Border Style="{StaticResource Card}" Padding="16,6">
+                    <VerticalStackLayout>
+                        <Label Text="No income this month yet." Style="{StaticResource Muted}" Padding="0,10"
+                               IsVisible="{Binding HasStreams, Converter={StaticResource InvertBool}}" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Streams}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:AmountRow">
+                                    <Grid ColumnDefinitions="*,Auto" Padding="0,10">
+                                        <Label Text="{Binding Name}" />
+                                        <Label Grid.Column="1" Text="{Binding AmountText}" Style="{StaticResource Strong}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
 </views:BasePage>

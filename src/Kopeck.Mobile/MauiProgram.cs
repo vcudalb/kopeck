@@ -54,8 +54,25 @@ public static class MauiProgram
         AddScreen<PlanPage, PlanViewModel>(services);
         AddScreen<CategoriesPage, CategoriesViewModel>(services);
         AddScreen<SharePage, ShareViewModel>(services);
+        AddScreen<MorePage, MoreViewModel>(services);
 
+        RemoveNativeInputUnderline();
         return builder.Build();
+    }
+
+    /// <summary>
+    /// Inputs sit inside a rounded "Field" border (see Styles.xaml), so Android's own underline would draw a second line.
+    /// </summary>
+    private static void RemoveNativeInputUnderline()
+    {
+#if ANDROID
+        static void Clear(Android.Views.View view) =>
+            view.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent);
+
+        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, _) => Clear(handler.PlatformView));
+        Microsoft.Maui.Handlers.PickerHandler.Mapper.AppendToMapping("NoUnderline", (handler, _) => Clear(handler.PlatformView));
+        Microsoft.Maui.Handlers.DatePickerHandler.Mapper.AppendToMapping("NoUnderline", (handler, _) => Clear(handler.PlatformView));
+#endif
     }
 
     private static void AddScreen<TPage, TViewModel>(IServiceCollection services)

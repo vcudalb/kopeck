@@ -5,40 +5,109 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
              xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
+             xmlns:controls="clr-namespace:Kopeck.Mobile.Views.Controls"
              x:DataType="vm:IncomeViewModel"
              Title="Income">
-    <Grid RowDefinitions="Auto,*,Auto" Padding="16" RowSpacing="8">
-        <VerticalStackLayout>
-            <Label Text="{Binding MonthText}" FontSize="18" FontAttributes="Bold" />
-            <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
-        </VerticalStackLayout>
-        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
-            <CollectionView.EmptyView><Label Text="No income this month." TextColor="Gray" /></CollectionView.EmptyView>
-            <CollectionView.ItemTemplate><DataTemplate x:DataType="dto:IncomeDto">
-                <SwipeView>
-                    <SwipeView.RightItems><SwipeItems><SwipeItem Text="Delete" BackgroundColor="#D32F2F"
-                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:IncomeViewModel}}, Path=DeleteCommand}" CommandParameter="{Binding .}" /></SwipeItems></SwipeView.RightItems>
-                    <Grid ColumnDefinitions="*,Auto" Padding="0,6" BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
-                        <VerticalStackLayout>
-                            <Label Text="{Binding StreamName}" FontAttributes="Bold" />
-                            <Label Text="{Binding Date, StringFormat='{0:dd MMM}'}" FontSize="12" TextColor="Gray" />
+    <Grid>
+        <Grid RowDefinitions="Auto,*" Padding="16,16,16,0" RowSpacing="12">
+            <VerticalStackLayout Spacing="12">
+                <controls:MonthSwitcher />
+                <Grid ColumnDefinitions="*,Auto" Padding="4,0">
+                    <Label Text="Earned this month" Style="{StaticResource Muted}" VerticalOptions="Center" />
+                    <Label Grid.Column="1" Text="{Binding TotalText}" Style="{StaticResource Title}" />
+                </Grid>
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                </Border>
+            </VerticalStackLayout>
+
+            <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+                <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout Padding="16,40" Spacing="6">
+                            <Label Text="No income this month" Style="{StaticResource Title}" HorizontalOptions="Center" />
+                            <Label Text="Tap + to record a salary or other income." Style="{StaticResource Muted}" HorizontalOptions="Center" IsVisible="{Binding CanEdit}" />
                         </VerticalStackLayout>
-                        <Label Grid.Column="1" Text="{Binding Amount, StringFormat='{0:N2}'}" VerticalOptions="Center" />
+                    </CollectionView.EmptyView>
+                    <CollectionView.Footer>
+                        <BoxView HeightRequest="96" Color="Transparent" />
+                    </CollectionView.Footer>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="dto:IncomeDto">
+                            <SwipeView BackgroundColor="Transparent" Margin="0,4">
+                                <SwipeView.RightItems>
+                                    <SwipeItems>
+                                        <SwipeItem Text="Delete" BackgroundColor="{StaticResource Danger}"
+                                                   IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:IncomeViewModel}}, Path=CanEdit}"
+                                                   Command="{Binding Source={RelativeSource AncestorType={x:Type vm:IncomeViewModel}}, Path=DeleteCommand}"
+                                                   CommandParameter="{Binding .}" />
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
+                                <Border Style="{StaticResource Row}" Margin="0">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                            <Label Text="{Binding StreamName}" Style="{StaticResource Strong}" LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding Note}" Style="{StaticResource Caption}" LineBreakMode="TailTruncation" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                            <Label Text="{Binding Amount, StringFormat='+{0:N2}'}" Style="{StaticResource Strong}"
+                                                   TextColor="{StaticResource Primary}" HorizontalOptions="End" />
+                                            <Label Text="{Binding Date, StringFormat='{0:d MMM}'}" Style="{StaticResource Caption}" HorizontalOptions="End" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </SwipeView>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+        </Grid>
+
+        <Border Style="{StaticResource Fab}" IsVisible="{Binding ShowAddButton}" SemanticProperties.Description="Add income">
+            <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding OpenFormCommand}" /></Border.GestureRecognizers>
+            <Image Source="plus.png" WidthRequest="24" HeightRequest="24" />
+        </Border>
+
+        <!-- Add sheet -->
+        <Grid IsVisible="{Binding IsFormOpen}">
+            <BoxView Color="{StaticResource Scrim}">
+                <BoxView.GestureRecognizers><TapGestureRecognizer Command="{Binding CloseFormCommand}" /></BoxView.GestureRecognizers>
+            </BoxView>
+            <Border Style="{StaticResource Sheet}">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="New income" Style="{StaticResource Title}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Cancel" Command="{Binding CloseFormCommand}" Style="{StaticResource TextButton}" />
                     </Grid>
-                </SwipeView>
-            </DataTemplate></CollectionView.ItemTemplate>
-        </CollectionView>
-        <VerticalStackLayout Grid.Row="2" Spacing="6" IsVisible="{Binding CanEdit}">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <Picker Title="Revenue stream" ItemsSource="{Binding Streams}" ItemDisplayBinding="{Binding Name}" SelectedItem="{Binding SelectedStream}" />
-                <Button Grid.Column="1" Text="+ Stream" Command="{Binding AddStreamCommand}" />
-            </Grid>
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                <Entry Placeholder="Amount" Keyboard="Numeric" Text="{Binding Amount}" />
-                <DatePicker Grid.Column="1" Date="{Binding Date}" />
-            </Grid>
-            <Button Text="Add income" Command="{Binding AddCommand}" IsEnabled="{Binding IsNotBusy}" />
-        </VerticalStackLayout>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Revenue stream" Style="{StaticResource FieldLabel}" VerticalOptions="End" />
+                        <Button Grid.Column="1" Text="+ New stream" Command="{Binding AddStreamCommand}" Style="{StaticResource TextButton}"
+                                FontSize="14" HeightRequest="36" Padding="8,0" />
+                    </Grid>
+                    <Border Style="{StaticResource Field}">
+                        <Picker Title="Choose a stream" ItemsSource="{Binding Streams}" ItemDisplayBinding="{Binding Name}"
+                                SelectedItem="{Binding SelectedStream}" />
+                    </Border>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+                        <Label Text="Amount" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Column="1" Text="Date" Style="{StaticResource FieldLabel}" />
+                        <Border Grid.Row="1" Style="{StaticResource Field}">
+                            <Entry Placeholder="0.00" Keyboard="Numeric" Text="{Binding Amount}" />
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Field}">
+                            <DatePicker Date="{Binding Date}" />
+                        </Border>
+                    </Grid>
+                    <Label Text="Note" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="Optional" Text="{Binding Note}" MaxLength="200" />
+                    </Border>
+                    <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                        <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                    </Border>
+                    <Button Text="Add income" Command="{Binding AddCommand}" IsEnabled="{Binding IsNotBusy}" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
     </Grid>
 </views:BasePage>

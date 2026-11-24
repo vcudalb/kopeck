@@ -14,6 +14,10 @@ public partial class LoginViewModel(
     [ObservableProperty] private string _email = "";
     [ObservableProperty] private string _password = "";
     [ObservableProperty] private string _serverUrl = server.BaseUrl;
+    [ObservableProperty] private bool _showServer;
+
+    /// <summary>The server address is a developer setting, so it stays folded away until asked for.</summary>
+    [RelayCommand] private void ToggleServer() => ShowServer = !ShowServer;
 
     [RelayCommand]
     private Task SignInAsync() => RunAsync(async ct =>
