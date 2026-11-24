@@ -16,14 +16,12 @@ public partial class ShareViewModel(ISharesApi shares, AppState state, IDialogSe
     [ObservableProperty] private string _email = "";
     [ObservableProperty] private ShareRole _role = ShareRole.Viewer;
 
-    public override Task OnAppearingAsync() => RunAsync(ReloadAsync);
-
     [RelayCommand]
     private Task AddAsync() => RunAsync(async ct =>
     {
         await shares.ShareAsync(BudgetId, new ShareRequest(Email, Role), ct);
         Email = "";
-        await ReloadAsync(ct);
+        await LoadAsync(ct);
     });
 
     [RelayCommand]
@@ -31,8 +29,8 @@ public partial class ShareViewModel(ISharesApi shares, AppState state, IDialogSe
         ConfirmThenRunAsync("Stop sharing", $"Remove access for {share.Email}?", "Remove", async ct =>
         {
             await shares.RemoveAsync(BudgetId, share.Id, ct);
-            await ReloadAsync(ct);
+            await LoadAsync(ct);
         });
 
-    private async Task ReloadAsync(CancellationToken ct) => Items.ReplaceWith(await shares.ListAsync(BudgetId, ct));
+    protected override async Task LoadAsync(CancellationToken ct) => Items.ReplaceWith(await shares.ListAsync(BudgetId, ct));
 }

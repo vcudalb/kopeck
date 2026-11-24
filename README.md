@@ -380,5 +380,5 @@ turns warnings into errors for every project except the MAUI app; `.editorconfig
 - **No unit tests for the mobile view models** yet (they are written to be testable).
 - Income entries can't be edited and streams can't be renamed.
 - Single currency per budget; no recurring expenses, charts, or import of the existing xlsx.
-- No app icon or splash screen. The app id `com.example.kopeck` is a placeholder, and iOS `Info.plist` still allows
+- The app id `com.example.kopeck` is a placeholder, and iOS `Info.plist` still allows
   local-network HTTP; fix both before a release.

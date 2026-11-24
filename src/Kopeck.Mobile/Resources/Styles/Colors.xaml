@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Brand and surface colours. Each colour has a light and a dark variant; styles pick one with AppThemeBinding. -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+    <Color x:Key="Primary">#2E7D32</Color>
+    <Color x:Key="PrimaryDark">#1B5E20</Color>
+    <Color x:Key="OnPrimary">#FFFFFF</Color>
+    <Color x:Key="PrimaryContainer">#E3F1E4</Color>
+    <Color x:Key="PrimaryContainerDark">#1F3A21</Color>
+
+    <Color x:Key="Background">#F4F6F5</Color>
+    <Color x:Key="BackgroundDark">#111412</Color>
+    <Color x:Key="Surface">#FFFFFF</Color>
+    <Color x:Key="SurfaceDark">#1C201D</Color>
+    <Color x:Key="Outline">#E1E5E2</Color>
+    <Color x:Key="OutlineDark">#2F3530</Color>
+
+    <Color x:Key="TextPrimary">#1A1D1B</Color>
+    <Color x:Key="TextPrimaryDark">#E6E9E7</Color>
+    <Color x:Key="TextMuted">#69716B</Color>
+    <Color x:Key="TextMutedDark">#9AA39C</Color>
+
+    <Color x:Key="Danger">#C62828</Color>
+    <Color x:Key="DangerContainer">#FDECEC</Color>
+    <Color x:Key="DangerContainerDark">#3A1C1C</Color>
+    <Color x:Key="Scrim">#66000000</Color>
+</ResourceDictionary>

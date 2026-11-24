@@ -6,30 +6,56 @@
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
              xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
              x:DataType="vm:ShareViewModel"
-             Title="Share dashboard">
-    <Grid RowDefinitions="Auto,*,Auto" Padding="16" RowSpacing="8">
-        <VerticalStackLayout>
-            <Label Text="Invite people by the email they use (or will use) to sign in. Viewers can only look; editors can add expenses, income and plans." FontSize="12" TextColor="Gray" />
-            <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
-        </VerticalStackLayout>
-        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
-            <CollectionView.EmptyView><Label Text="Not shared with anyone." TextColor="Gray" /></CollectionView.EmptyView>
-            <CollectionView.ItemTemplate><DataTemplate x:DataType="dto:ShareDto">
-                <SwipeView>
-                    <SwipeView.RightItems><SwipeItems><SwipeItem Text="Remove" BackgroundColor="#D32F2F"
-                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ShareViewModel}}, Path=RemoveCommand}" CommandParameter="{Binding .}" /></SwipeItems></SwipeView.RightItems>
-                    <Grid ColumnDefinitions="*,Auto" Padding="0,8" BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
-                        <Label Text="{Binding Email}" />
-                        <Label Grid.Column="1" Text="{Binding Role}" TextColor="Gray" />
-                    </Grid>
-                </SwipeView>
-            </DataTemplate></CollectionView.ItemTemplate>
+             Title="Share budget">
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16" RowSpacing="12">
+        <!-- Invite -->
+        <Border Style="{StaticResource Card}">
+            <VerticalStackLayout Spacing="12">
+                <Label Text="Invite someone" Style="{StaticResource Title}" />
+                <Label Text="Use the email they sign in with (or will sign up with). Viewers can only look; editors can add expenses, income and plans."
+                       Style="{StaticResource Caption}" />
+                <Border Style="{StaticResource Field}">
+                    <Entry Placeholder="their@email.com" Keyboard="Email" Text="{Binding Email}" />
+                </Border>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Border Style="{StaticResource Field}">
+                        <Picker Title="Access" ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" />
+                    </Border>
+                    <Button Grid.Column="1" Text="Invite" Command="{Binding AddCommand}" IsEnabled="{Binding IsNotBusy}" WidthRequest="110" />
+                </Grid>
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                </Border>
+            </VerticalStackLayout>
+        </Border>
+
+        <Label Grid.Row="1" Text="PEOPLE WITH ACCESS" Style="{StaticResource SectionHeader}" />
+
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Items}" SelectionMode="None">
+            <CollectionView.EmptyView>
+                <Label Text="Not shared with anyone yet." Style="{StaticResource Muted}" Padding="4,8" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="dto:ShareDto">
+                    <SwipeView BackgroundColor="Transparent" Margin="0,4">
+                        <SwipeView.RightItems>
+                            <SwipeItems>
+                                <SwipeItem Text="Remove" BackgroundColor="{StaticResource Danger}"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ShareViewModel}}, Path=RemoveCommand}"
+                                           CommandParameter="{Binding .}" />
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+                        <Border Style="{StaticResource Row}" Margin="0">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Text="{Binding Email}" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                                <Border Grid.Column="1" Style="{StaticResource Chip}">
+                                    <Label Text="{Binding Role}" Style="{StaticResource ChipText}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
         </CollectionView>
-        <VerticalStackLayout Grid.Row="2" Spacing="6">
-            <Entry Placeholder="Their email" Keyboard="Email" Text="{Binding Email}" />
-            <Picker Title="Access" ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" />
-            <Button Text="Share" Command="{Binding AddCommand}" IsEnabled="{Binding IsNotBusy}" />
-        </VerticalStackLayout>
     </Grid>
 </views:BasePage>

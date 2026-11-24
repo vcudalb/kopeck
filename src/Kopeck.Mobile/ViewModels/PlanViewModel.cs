@@ -23,7 +23,7 @@ public partial class PlanViewModel(IPlansApi plans, AppState state, IDialogServi
 {
     public ObservableCollection<PlanRow> Rows { get; } = [];
 
-    public override Task OnAppearingAsync() => RunAsync(ReloadAsync);
+    [ObservableProperty] private string _totalText = "";
 
     [RelayCommand]
     private Task SaveAsync() => RunAsync(async ct =>
@@ -40,24 +40,27 @@ public partial class PlanViewModel(IPlansApi plans, AppState state, IDialogServi
             }
             if (amount != row.OriginalAmount) changes.Add(new PlanAmount(row.CategoryId, amount));
         }
-        if (changes.Count == 0) return;
+        if (changes.Count == 0) { await Dialogs.AlertAsync("Nothing to save", "No planned amounts were changed."); return; }
 
         await plans.SaveAsync(BudgetId, new SavePlansRequest(State.Month, changes), ct);
-        await ReloadAsync(ct);
-        await Dialogs.AlertAsync("Saved", "Planned amounts updated.");
+        await LoadAsync(ct);
+        await Dialogs.AlertAsync("Plan saved", $"Planned amounts for {State.MonthText} were updated.");
     });
 
     [RelayCommand]
     private Task CopyPreviousMonthAsync() => RunAsync(async ct =>
     {
         var result = await plans.CopyAsync(BudgetId, new CopyPlanRequest(State.Month.AddMonths(-1), State.Month), ct);
-        await ReloadAsync(ct);
-        if (result.Copied == 0) Error = "Nothing to copy: last month has no plans this month is missing.";
+        await LoadAsync(ct);
+        await Dialogs.AlertAsync("Copy from last month", result.Copied == 0
+            ? "Nothing to copy: every category planned last month already has an amount this month."
+            : $"Copied {result.Copied} planned amount(s) from last month.");
     });
 
-    private async Task ReloadAsync(CancellationToken ct)
+    protected override async Task LoadAsync(CancellationToken ct)
     {
-        RefreshMonthText();
-        Rows.ReplaceWith((await plans.ListAsync(BudgetId, State.Month, ct)).Select(p => new PlanRow(p)));
+        var list = await plans.ListAsync(BudgetId, State.Month, ct);
+        Rows.ReplaceWith(list.Select(p => new PlanRow(p)));
+        TotalText = $"{list.Sum(p => p.Amount):N2} {Currency}";
     }
 }

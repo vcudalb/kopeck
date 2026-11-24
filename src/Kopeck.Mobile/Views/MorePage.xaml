@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:BasePage x:Class="Kopeck.Mobile.Views.MorePage"
+             xmlns:views="clr-namespace:Kopeck.Mobile.Views"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             x:DataType="vm:MoreViewModel"
+             Title="More">
+    <ContentPage.Resources>
+        <!-- One tappable settings row: icon, text, chevron -->
+        <Style x:Key="MenuRow" TargetType="Grid">
+            <Setter Property="ColumnDefinitions" Value="Auto,*,Auto" />
+            <Setter Property="ColumnSpacing" Value="14" />
+            <Setter Property="Padding" Value="16,14" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+            </Border>
+
+            <!-- Open budget -->
+            <Border Style="{StaticResource Card}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                    <Border Style="{StaticResource Avatar}" WidthRequest="52" HeightRequest="52" StrokeShape="RoundRectangle 26">
+                        <Label Text="{Binding BudgetInitial}" Style="{StaticResource AvatarText}" FontSize="22" />
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                        <Label Text="{Binding BudgetName}" Style="{StaticResource Title}" LineBreakMode="TailTruncation" />
+                        <Label Text="{Binding BudgetDetails}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Label Text="BUDGET" Style="{StaticResource SectionHeader}" />
+            <Border Style="{StaticResource Card}" Padding="0">
+                <VerticalStackLayout>
+                    <Grid Style="{StaticResource MenuRow}">
+                        <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding OpenCategoriesCommand}" /></Grid.GestureRecognizers>
+                        <Image Source="ic_tag.png" WidthRequest="22" HeightRequest="22" />
+                        <Label Grid.Column="1" Text="Categories" VerticalOptions="Center" />
+                        <Image Grid.Column="2" Source="row_chevron.png" WidthRequest="20" HeightRequest="20" />
+                    </Grid>
+                    <BoxView Style="{StaticResource Separator}" Margin="52,0,0,0" IsVisible="{Binding IsOwner}" />
+                    <Grid Style="{StaticResource MenuRow}" IsVisible="{Binding IsOwner}">
+                        <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding OpenShareCommand}" /></Grid.GestureRecognizers>
+                        <Image Source="ic_share.png" WidthRequest="22" HeightRequest="22" />
+                        <Label Grid.Column="1" Text="Share budget" VerticalOptions="Center" />
+                        <Image Grid.Column="2" Source="row_chevron.png" WidthRequest="20" HeightRequest="20" />
+                    </Grid>
+                    <BoxView Style="{StaticResource Separator}" Margin="52,0,0,0" />
+                    <Grid Style="{StaticResource MenuRow}">
+                        <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding SwitchBudgetCommand}" /></Grid.GestureRecognizers>
+                        <Image Source="ic_swap.png" WidthRequest="22" HeightRequest="22" />
+                        <Label Grid.Column="1" Text="Switch budget" VerticalOptions="Center" />
+                        <Image Grid.Column="2" Source="row_chevron.png" WidthRequest="20" HeightRequest="20" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="ACCOUNT" Style="{StaticResource SectionHeader}" />
+            <Border Style="{StaticResource Card}" Padding="0">
+                <VerticalStackLayout>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Padding="16,14">
+                        <Border Style="{StaticResource Avatar}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 18">
+                            <Label Text="{Binding UserInitial}" Style="{StaticResource AvatarText}" FontSize="15" />
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                            <Label Text="{Binding UserName}" Style="{StaticResource Strong}" />
+                            <Label Text="{Binding UserEmail}" Style="{StaticResource Caption}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                    <BoxView Style="{StaticResource Separator}" Margin="52,0,0,0" />
+                    <Grid Style="{StaticResource MenuRow}">
+                        <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding SignOutCommand}" /></Grid.GestureRecognizers>
+                        <Image Source="ic_logout.png" WidthRequest="22" HeightRequest="22" />
+                        <Label Grid.Column="1" Text="Sign out" VerticalOptions="Center" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="DANGER ZONE" Style="{StaticResource SectionHeader}" />
+            <Border Style="{StaticResource Card}" Padding="0">
+                <VerticalStackLayout>
+                    <Grid Style="{StaticResource MenuRow}" IsVisible="{Binding IsShared}">
+                        <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding LeaveCommand}" /></Grid.GestureRecognizers>
+                        <Image Source="ic_leave.png" WidthRequest="22" HeightRequest="22" />
+                        <Label Grid.Column="1" Text="Leave this budget" TextColor="{StaticResource Danger}" VerticalOptions="Center" />
+                    </Grid>
+                    <Grid Style="{StaticResource MenuRow}" IsVisible="{Binding IsOwner}">
+                        <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding DeleteBudgetCommand}" /></Grid.GestureRecognizers>
+                        <Image Source="ic_trash.png" WidthRequest="22" HeightRequest="22" />
+                        <Label Grid.Column="1" Text="Delete this budget" TextColor="{StaticResource Danger}" VerticalOptions="Center" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</views:BasePage>

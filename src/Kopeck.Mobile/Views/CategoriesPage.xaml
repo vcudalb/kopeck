@@ -7,26 +7,57 @@
              xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
              x:DataType="vm:CategoriesViewModel"
              Title="Categories">
-    <Grid RowDefinitions="Auto,*,Auto" Padding="16" RowSpacing="8">
-        <VerticalStackLayout>
-            <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
-        </VerticalStackLayout>
-        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
-            <CollectionView.EmptyView><Label Text="No categories yet (e.g. Home, Bills, Fuel)." TextColor="Gray" /></CollectionView.EmptyView>
-            <CollectionView.ItemTemplate><DataTemplate x:DataType="dto:CategoryDto">
-                <SwipeView>
-                    <SwipeView.RightItems><SwipeItems>
-                        <SwipeItem Text="Rename" BackgroundColor="Gray" Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=RenameCommand}" CommandParameter="{Binding .}" />
-                        <SwipeItem Text="Delete" BackgroundColor="#D32F2F" Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=DeleteCommand}" CommandParameter="{Binding .}" />
-                    </SwipeItems></SwipeView.RightItems>
-                    <Label Text="{Binding Name}" Padding="0,10" BackgroundColor="{AppThemeBinding Light=White, Dark=Black}" />
-                </SwipeView>
-            </DataTemplate></CollectionView.ItemTemplate>
-        </CollectionView>
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding CanEdit}">
-            <Entry Placeholder="New category" Text="{Binding NewName}" MaxLength="80" />
-            <Button Grid.Column="1" Text="Add" Command="{Binding AddCommand}" />
+    <Grid>
+        <Grid RowDefinitions="Auto,*" Padding="16,16,16,0" RowSpacing="8">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Group your expenses, e.g. Home, Bills, Fuel. Tap one to rename it, swipe left to delete."
+                       Style="{StaticResource Caption}" Padding="4,0" IsVisible="{Binding CanEdit}" />
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                </Border>
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" HeightRequest="24" />
+            </VerticalStackLayout>
+
+            <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="16,40" Spacing="6">
+                        <Label Text="No categories yet" Style="{StaticResource Title}" HorizontalOptions="Center" />
+                        <Label Text="Tap + to add your first one." Style="{StaticResource Muted}" HorizontalOptions="Center" IsVisible="{Binding CanEdit}" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.Footer>
+                    <BoxView HeightRequest="96" Color="Transparent" />
+                </CollectionView.Footer>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="dto:CategoryDto">
+                        <SwipeView BackgroundColor="Transparent" Margin="0,4">
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Delete" BackgroundColor="{StaticResource Danger}"
+                                               IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=CanEdit}"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=DeleteCommand}"
+                                               CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            <Border Style="{StaticResource Row}" Margin="0">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=RenameCommand}"
+                                                          CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                    <Image Source="ic_tag.png" WidthRequest="20" HeightRequest="20" />
+                                    <Label Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Strong}" VerticalOptions="Center" />
+                                </Grid>
+                            </Border>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
         </Grid>
+
+        <Border Style="{StaticResource Fab}" IsVisible="{Binding CanEdit}" SemanticProperties.Description="Add category">
+            <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding AddCommand}" /></Border.GestureRecognizers>
+            <Image Source="plus.png" WidthRequest="24" HeightRequest="24" />
+        </Border>
     </Grid>
 </views:BasePage>
