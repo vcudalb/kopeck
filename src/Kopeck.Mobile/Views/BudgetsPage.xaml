@@ -4,35 +4,92 @@
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
-             xmlns:dto="clr-namespace:Kopeck.Contracts;assembly=Kopeck.Contracts"
              x:DataType="vm:BudgetsViewModel"
-             Title="My budgets">
-    <ContentPage.ToolbarItems><ToolbarItem Text="Sign out" Command="{Binding SignOutCommand}" /></ContentPage.ToolbarItems>
-    <Grid RowDefinitions="Auto,*,Auto" Padding="16" RowSpacing="8">
-        <VerticalStackLayout Grid.Row="0">
-            <Label Text="{Binding Greeting}" FontSize="18" />
-            <Label Text="{Binding Error}" IsVisible="{Binding HasError}" Style="{StaticResource ErrorLabel}" />
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
-        </VerticalStackLayout>
-        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
-            <CollectionView.EmptyView><Label Text="No budgets yet. Create one below." TextColor="Gray" /></CollectionView.EmptyView>
-            <CollectionView.ItemTemplate><DataTemplate x:DataType="dto:BudgetDto">
-                <Border Style="{StaticResource Card}" Margin="0,4">
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BudgetsViewModel}}, Path=OpenCommand}" CommandParameter="{Binding .}" />
-                    </Border.GestureRecognizers>
-                    <VerticalStackLayout>
-                        <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" />
-                        <Label Text="{Binding Currency}" TextColor="Gray" />
-                        <Label Text="{Binding Role, StringFormat='Your access: {0}'}" TextColor="Gray" FontSize="12" />
-                    </VerticalStackLayout>
+             Title="Budgets">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Sign out" Order="Secondary" Command="{Binding SignOutCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid>
+        <Grid RowDefinitions="Auto,*" Padding="16,16,16,0" RowSpacing="12">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="{Binding Greeting}" Style="{StaticResource Headline}" />
+                <Label Text="Choose a budget to open." Style="{StaticResource Muted}" />
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}" Margin="0,8,0,0">
+                    <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
                 </Border>
-            </DataTemplate></CollectionView.ItemTemplate>
-        </CollectionView>
-        <Grid Grid.Row="2" ColumnDefinitions="*,80,Auto" ColumnSpacing="8">
-            <Entry Placeholder="New budget name" Text="{Binding NewName}" />
-            <Entry Grid.Column="1" Placeholder="EUR" Text="{Binding NewCurrency}" MaxLength="5" />
-            <Button Grid.Column="2" Text="Add" Command="{Binding CreateCommand}" />
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" HeightRequest="24" Margin="0,8,0,0" />
+            </VerticalStackLayout>
+
+            <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Spacing="12" Padding="16,48" IsVisible="{Binding IsEmpty}">
+                        <Image Source="logo.png" WidthRequest="64" HeightRequest="64" Opacity="0.9" />
+                        <Label Text="No budgets yet" Style="{StaticResource Title}" HorizontalOptions="Center" />
+                        <Label Text="Create one to start planning, or ask someone to share theirs with you."
+                               Style="{StaticResource Muted}" HorizontalTextAlignment="Center" />
+                        <Button Text="Create a budget" Command="{Binding OpenFormCommand}" HorizontalOptions="Center" Margin="0,8,0,0" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.Footer>
+                    <BoxView HeightRequest="96" Color="Transparent" />
+                </CollectionView.Footer>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:BudgetItem">
+                        <Border Style="{StaticResource Row}" Padding="14">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BudgetsViewModel}}, Path=OpenCommand}"
+                                                      CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                                <Border Style="{StaticResource Avatar}">
+                                    <Label Text="{Binding Initial}" Style="{StaticResource AvatarText}" />
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                    <Label Text="{Binding Name}" Style="{StaticResource Strong}" FontSize="16" LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding Details}" Style="{StaticResource Caption}" LineBreakMode="TailTruncation" />
+                                </VerticalStackLayout>
+                                <Border Grid.Column="2" Style="{StaticResource Chip}">
+                                    <Label Text="{Binding RoleText}" Style="{StaticResource ChipText}" />
+                                </Border>
+                                <Image Grid.Column="3" Source="row_chevron.png" WidthRequest="20" HeightRequest="20" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+
+        <Border Style="{StaticResource Fab}" IsVisible="{Binding ShowAddButton}" SemanticProperties.Description="Create a budget">
+            <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding OpenFormCommand}" /></Border.GestureRecognizers>
+            <Image Source="plus.png" WidthRequest="24" HeightRequest="24" />
+        </Border>
+
+        <!-- New budget sheet -->
+        <Grid IsVisible="{Binding IsFormOpen}">
+            <BoxView Color="{StaticResource Scrim}">
+                <BoxView.GestureRecognizers><TapGestureRecognizer Command="{Binding CloseFormCommand}" /></BoxView.GestureRecognizers>
+            </BoxView>
+            <Border Style="{StaticResource Sheet}">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="New budget" Style="{StaticResource Title}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Cancel" Command="{Binding CloseFormCommand}" Style="{StaticResource TextButton}" />
+                    </Grid>
+                    <Label Text="Name" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="e.g. Household" Text="{Binding NewName}" MaxLength="80" />
+                    </Border>
+                    <Label Text="Currency" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="EUR" Text="{Binding NewCurrency}" MaxLength="5" />
+                    </Border>
+                    <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                        <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                    </Border>
+                    <Button Text="Create budget" Command="{Binding CreateCommand}" IsEnabled="{Binding IsNotBusy}" />
+                </VerticalStackLayout>
+            </Border>
         </Grid>
     </Grid>
 </views:BasePage>

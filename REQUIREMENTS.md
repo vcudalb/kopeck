@@ -43,7 +43,7 @@ Not carried over, on purpose: the MDL/EUR savings and conversion sheet (a budget
 
 | Part | Choice |
 |---|---|
-| App | .NET 8 MAUI, MVVM with CommunityToolkit.Mvvm |
+| App | .NET 8 MAUI, MVVM with CommunityToolkit.Mvvm. Shell navigation: sign-in → budget list → bottom tabs (Overview, Expenses, Income, Plan, More) |
 | API | ASP.NET Core 8 minimal API, EF Core with SQLite and migrations |
 | Auth and email | JWT bearer tokens, MailKit over SMTP |
 | Shared | `Kopeck.Contracts` (DTOs used by app and API) |
@@ -64,6 +64,5 @@ Not carried over, on purpose: the MDL/EUR savings and conversion sheet (a budget
 - ❌ No request cancellation from the view models.
 - ❌ One currency per budget.
 - ❌ No recurring expenses, charts, or import of the existing xlsx.
-- ❌ No app icon or splash screen yet.
 - ❌ The iOS `Info.plist` still allows local HTTP. Remove that before a release.
 - ❌ The app ID `com.example.kopeck` is a placeholder and must be changed before publishing.
