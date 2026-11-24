@@ -2,19 +2,7 @@ using Kopeck.Mobile.ViewModels;
 
 namespace Kopeck.Mobile.Views;
 
-public partial class DashboardPage : ContentPage
+public partial class DashboardPage : BasePage
 {
-    private readonly DashboardViewModel _vm;
-
-    public DashboardPage(DashboardViewModel vm)
-    {
-        InitializeComponent();
-        BindingContext = _vm = vm;
-    }
-
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        _vm.LoadCommand.Execute(null);
-    }
+    public DashboardPage(DashboardViewModel vm) : base(vm) => InitializeComponent();
 }

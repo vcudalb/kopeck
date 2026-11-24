@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="Kopeck.Mobile.Views.DashboardPage"
+<views:BasePage x:Class="Kopeck.Mobile.Views.DashboardPage"
+             xmlns:views="clr-namespace:Kopeck.Mobile.Views"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
@@ -50,7 +51,7 @@
                 </Grid>
             </DataTemplate></BindableLayout.ItemTemplate>
         </VerticalStackLayout>
-        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
             <Button Text="Expenses" Command="{Binding OpenExpensesCommand}" />
             <Button Grid.Column="1" Text="Income" Command="{Binding OpenIncomeCommand}" />
             <Button Grid.Row="1" Text="Plan" Command="{Binding OpenPlanCommand}" />
@@ -61,6 +62,7 @@
                     <DataTrigger TargetType="Button" Binding="{Binding IsOwner}" Value="True"><Setter Property="IsVisible" Value="False" /></DataTrigger>
                 </Button.Triggers>
             </Button>
+            <Button Grid.Row="3" Grid.ColumnSpan="2" Text="Delete budget" Command="{Binding DeleteBudgetCommand}" IsVisible="{Binding IsOwner}" BackgroundColor="#D32F2F" />
         </Grid>
     </VerticalStackLayout></ScrollView>
-</ContentPage>
+</views:BasePage>

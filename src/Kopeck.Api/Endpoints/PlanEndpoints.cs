@@ -1,52 +1,31 @@
-using Kopeck.Api.Data;
+using Kopeck.Api.Http;
+using Kopeck.Application.Planning;
 using Kopeck.Contracts;
-using Microsoft.EntityFrameworkCore;
+using Kopeck.Domain.Budgets;
 
 namespace Kopeck.Api.Endpoints;
 
 /// <summary>Planned spend per category per month.</summary>
-public static class PlanEndpoints
+public sealed class PlanEndpoints : IEndpointModule
 {
-    public static void MapPlans(this IEndpointRouteBuilder app)
+    public void Map(IEndpointRouteBuilder app)
     {
-        var read = app.MapBudgetGroup().MapGroup("/plans");
-        var write = app.MapBudgetGroup().RequireRole(BudgetRole.Editor).MapGroup("/plans");
+        var budget = app.MapBudgetGroup();
+        var read = budget.MapGroup("/plans");
+        var write = budget.RequireAccess(AccessLevel.Editor).MapGroup("/plans");
 
-        // Every category with its planned amount for the month (0 when not planned yet).
-        read.MapGet("/", async (Guid budgetId, DateOnly month, KopeckDb db, CancellationToken ct) =>
-        {
-            var m = Rules.FirstOfMonth(month);
-            var categories = await db.Categories.AsNoTracking().Where(c => c.BudgetId == budgetId).OrderBy(c => c.Name).ToListAsync(ct);
-            var plans = await db.Plans.AsNoTracking().Where(p => p.BudgetId == budgetId && p.Month == m).ToDictionaryAsync(p => p.CategoryId, p => p.Amount, ct);
-            return Results.Ok(categories.Select(c => new PlanDto(c.Id, c.Name, plans.GetValueOrDefault(c.Id))));
-        });
+        read.MapGet("/", async (Guid budgetId, DateOnly month, IPlanService svc, CancellationToken ct) =>
+            Results.Ok(await svc.ListAsync(budgetId, month, ct)));
 
-        // Upsert: sets the planned amount for one category/month (0 clears it).
-        write.MapPut("/", async (Guid budgetId, PlanRequest r, KopeckDb db) =>
-        {
-            if (!Rules.IsValidAmount(r.Amount, allowZero: true)) return Rules.Bad("Planned amount must be 0 or more (max 2 decimals).");
-            if (!await db.Categories.AnyAsync(c => c.Id == r.CategoryId && c.BudgetId == budgetId)) return Rules.Bad("Unknown category.");
+        // One category/month (0 clears it).
+        write.MapPut("/", async (Guid budgetId, PlanRequest r, IPlanService svc, CancellationToken ct) =>
+            (await svc.SetAsync(budgetId, r, ct)).ToHttp());
 
-            var m = Rules.FirstOfMonth(r.Month);
-            var plan = await db.Plans.FirstOrDefaultAsync(p => p.BudgetId == budgetId && p.CategoryId == r.CategoryId && p.Month == m);
-            if (plan is null) db.Plans.Add(new PlannedExpense { BudgetId = budgetId, CategoryId = r.CategoryId, Month = m, Amount = r.Amount });
-            else plan.Amount = r.Amount;
-            await db.SaveChangesAsync();
-            return Results.NoContent();
-        });
+        // Several categories for one month, all or nothing (what the Plan screen's Save uses).
+        write.MapPut("/bulk", async (Guid budgetId, SavePlansRequest r, IPlanService svc, CancellationToken ct) =>
+            (await svc.SaveManyAsync(budgetId, r, ct)).ToHttp());
 
-        // Same workflow as duplicating last month's sheet in the Excel file. Never overwrites existing plans.
-        write.MapPost("/copy", async (Guid budgetId, CopyPlanRequest r, KopeckDb db) =>
-        {
-            var from = Rules.FirstOfMonth(r.FromMonth); var to = Rules.FirstOfMonth(r.ToMonth);
-            if (from == to) return Rules.Bad("Choose two different months.");
-
-            var existing = await db.Plans.Where(p => p.BudgetId == budgetId && p.Month == to).Select(p => p.CategoryId).ToListAsync();
-            var copies = await db.Plans.AsNoTracking().Where(p => p.BudgetId == budgetId && p.Month == from && !existing.Contains(p.CategoryId))
-                .Select(p => new PlannedExpense { BudgetId = budgetId, CategoryId = p.CategoryId, Month = to, Amount = p.Amount }).ToListAsync();
-            db.Plans.AddRange(copies);
-            await db.SaveChangesAsync();
-            return Results.Ok(new { copied = copies.Count });
-        });
+        write.MapPost("/copy", async (Guid budgetId, CopyPlanRequest r, IPlanService svc, CancellationToken ct) =>
+            (await svc.CopyMissingAsync(budgetId, r, ct)).ToHttp());
     }
 }

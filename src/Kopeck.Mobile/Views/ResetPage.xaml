@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="Kopeck.Mobile.Views.ResetPage"
+<views:BasePage x:Class="Kopeck.Mobile.Views.ResetPage"
+             xmlns:views="clr-namespace:Kopeck.Mobile.Views"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
@@ -15,4 +16,4 @@
         <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
         <Button Text="Change password" Command="{Binding ResetCommand}" IsEnabled="{Binding IsNotBusy}" />
     </VerticalStackLayout></ScrollView>
-</ContentPage>
+</views:BasePage>

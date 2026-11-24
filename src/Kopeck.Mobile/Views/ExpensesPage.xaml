@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="Kopeck.Mobile.Views.ExpensesPage"
+<views:BasePage x:Class="Kopeck.Mobile.Views.ExpensesPage"
+             xmlns:views="clr-namespace:Kopeck.Mobile.Views"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
@@ -16,8 +17,14 @@
             <CollectionView.EmptyView><Label Text="No expenses this month." TextColor="Gray" /></CollectionView.EmptyView>
             <CollectionView.ItemTemplate><DataTemplate x:DataType="dto:ExpenseDto">
                 <SwipeView>
-                    <SwipeView.RightItems><SwipeItems><SwipeItem Text="Delete" BackgroundColor="#D32F2F"
-                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ExpensesViewModel}}, Path=DeleteCommand}" CommandParameter="{Binding .}" /></SwipeItems></SwipeView.RightItems>
+                    <SwipeView.RightItems><SwipeItems>
+                        <SwipeItem Text="Edit" BackgroundColor="Gray"
+                            IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ExpensesViewModel}}, Path=CanEdit}"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ExpensesViewModel}}, Path=EditCommand}" CommandParameter="{Binding .}" />
+                        <SwipeItem Text="Delete" BackgroundColor="#D32F2F"
+                            IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ExpensesViewModel}}, Path=CanEdit}"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ExpensesViewModel}}, Path=DeleteCommand}" CommandParameter="{Binding .}" />
+                    </SwipeItems></SwipeView.RightItems>
                     <Grid ColumnDefinitions="*,Auto" Padding="0,6" BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
                         <VerticalStackLayout>
                             <Label Text="{Binding CategoryName}" FontAttributes="Bold" />
@@ -36,7 +43,8 @@
                 <DatePicker Grid.Column="1" Date="{Binding Date}" />
             </Grid>
             <Entry Placeholder="Note (optional)" Text="{Binding Note}" MaxLength="200" />
-            <Button Text="Add expense" Command="{Binding AddCommand}" IsEnabled="{Binding IsNotBusy}" />
+            <Button Text="{Binding SubmitText}" Command="{Binding SubmitCommand}" IsEnabled="{Binding IsNotBusy}" />
+            <Button Text="Cancel edit" Command="{Binding CancelEditCommand}" IsVisible="{Binding IsEditing}" BackgroundColor="Gray" />
         </VerticalStackLayout>
     </Grid>
-</ContentPage>
+</views:BasePage>

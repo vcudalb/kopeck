@@ -1,0 +1,13 @@
+{
+  "solution": {
+    "path": "Kopeck.sln",
+    "projects": [
+      "src\\Kopeck.Contracts\\Kopeck.Contracts.csproj",
+      "src\\Kopeck.Domain\\Kopeck.Domain.csproj",
+      "src\\Kopeck.Application\\Kopeck.Application.csproj",
+      "src\\Kopeck.Infrastructure\\Kopeck.Infrastructure.csproj",
+      "src\\Kopeck.Api\\Kopeck.Api.csproj",
+      "tests\\Kopeck.Api.Tests\\Kopeck.Api.Tests.csproj"
+    ]
+  }
+}

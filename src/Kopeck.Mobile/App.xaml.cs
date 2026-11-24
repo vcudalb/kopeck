@@ -5,11 +5,11 @@ namespace Kopeck.Mobile;
 
 public partial class App : Application
 {
-    private readonly Session _session;
+    private readonly IUserSession _session;
     private readonly INavigationService _nav;
     private readonly ILogger<App> _log;
 
-    public App(Session session, INavigationService nav, ILogger<App> log)
+    public App(IUserSession session, INavigationService nav, ILogger<App> log)
     {
         InitializeComponent();
         (_session, _nav, _log) = (session, nav, log);

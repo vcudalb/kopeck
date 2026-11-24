@@ -16,32 +16,50 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
+        var services = builder.Services;
+
+        // Platform services, injected through their interfaces (no static .Default calls in app code).
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton(Preferences.Default);
+        services.AddSingleton(SecureStorage.Default);
+        services.AddSingleton(DeviceInfo.Current);
+
         // Infrastructure: one instance for the app's lifetime.
-        builder.Services.AddSingleton<Session>();
-        builder.Services.AddSingleton<AppState>();
-        builder.Services.AddSingleton<ApiClient>();
-        builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
-        builder.Services.AddSingleton<IDialogService, ShellDialogService>();
-        builder.Services.AddSingleton<ViewModelContext>();
+        services.AddSingleton(new HttpClient { Timeout = TimeSpan.FromSeconds(20) });
+        services.AddSingleton<IServerSettings, ServerSettings>();
+        services.AddSingleton<IUserSession, UserSession>();
+        services.AddSingleton<IApiClient, ApiClient>();
+        services.AddSingleton<AppState>();
+        services.AddSingleton<INavigationService, ShellNavigationService>();
+        services.AddSingleton<IDialogService, ShellDialogService>();
+
+        // Typed API gateways, one per feature.
+        services.AddSingleton<IAuthApi, AuthApi>();
+        services.AddSingleton<IBudgetsApi, BudgetsApi>();
+        services.AddSingleton<ICategoriesApi, CategoriesApi>();
+        services.AddSingleton<IExpensesApi, ExpensesApi>();
+        services.AddSingleton<IIncomeApi, IncomeApi>();
+        services.AddSingleton<IPlansApi, PlansApi>();
+        services.AddSingleton<ISharesApi, SharesApi>();
 
         // Screens: a new page + view model each time they are opened.
-        AddScreen<LoginPage, LoginViewModel>(builder.Services);
-        AddScreen<RegisterPage, RegisterViewModel>(builder.Services);
-        AddScreen<VerifyPage, VerifyViewModel>(builder.Services);
-        AddScreen<ResetPage, ResetViewModel>(builder.Services);
-        AddScreen<BudgetsPage, BudgetsViewModel>(builder.Services);
-        AddScreen<DashboardPage, DashboardViewModel>(builder.Services);
-        AddScreen<ExpensesPage, ExpensesViewModel>(builder.Services);
-        AddScreen<IncomePage, IncomeViewModel>(builder.Services);
-        AddScreen<PlanPage, PlanViewModel>(builder.Services);
-        AddScreen<CategoriesPage, CategoriesViewModel>(builder.Services);
-        AddScreen<SharePage, ShareViewModel>(builder.Services);
+        AddScreen<LoginPage, LoginViewModel>(services);
+        AddScreen<RegisterPage, RegisterViewModel>(services);
+        AddScreen<VerifyPage, VerifyViewModel>(services);
+        AddScreen<ResetPage, ResetViewModel>(services);
+        AddScreen<BudgetsPage, BudgetsViewModel>(services);
+        AddScreen<DashboardPage, DashboardViewModel>(services);
+        AddScreen<ExpensesPage, ExpensesViewModel>(services);
+        AddScreen<IncomePage, IncomeViewModel>(services);
+        AddScreen<PlanPage, PlanViewModel>(services);
+        AddScreen<CategoriesPage, CategoriesViewModel>(services);
+        AddScreen<SharePage, ShareViewModel>(services);
 
         return builder.Build();
     }
 
     private static void AddScreen<TPage, TViewModel>(IServiceCollection services)
-        where TPage : Page where TViewModel : class
+        where TPage : Page where TViewModel : BaseViewModel
     {
         services.AddTransient<TViewModel>();
         services.AddTransient<TPage>();
