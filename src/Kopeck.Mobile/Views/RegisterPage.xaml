@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="Kopeck.Mobile.Views.RegisterPage"
+<views:BasePage x:Class="Kopeck.Mobile.Views.RegisterPage"
+             xmlns:views="clr-namespace:Kopeck.Mobile.Views"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
@@ -14,4 +15,4 @@
         <Button Text="Create account" Command="{Binding CreateAccountCommand}" IsEnabled="{Binding IsNotBusy}" />
         <Label Text="We will email you a 6-digit code to confirm your address." FontSize="12" TextColor="Gray" />
     </VerticalStackLayout></ScrollView>
-</ContentPage>
+</views:BasePage>

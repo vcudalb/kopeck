@@ -2,19 +2,7 @@ using Kopeck.Mobile.ViewModels;
 
 namespace Kopeck.Mobile.Views;
 
-public partial class ExpensesPage : ContentPage
+public partial class ExpensesPage : BasePage
 {
-    private readonly ExpensesViewModel _vm;
-
-    public ExpensesPage(ExpensesViewModel vm)
-    {
-        InitializeComponent();
-        BindingContext = _vm = vm;
-    }
-
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        _vm.LoadCommand.Execute(null);
-    }
+    public ExpensesPage(ExpensesViewModel vm) : base(vm) => InitializeComponent();
 }

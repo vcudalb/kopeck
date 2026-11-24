@@ -50,6 +50,10 @@ public record ExpenseRequest(Guid CategoryId, DateOnly Date, decimal Amount, str
 public record PlanDto(Guid CategoryId, string CategoryName, decimal Amount);
 public record PlanRequest(Guid CategoryId, DateOnly Month, decimal Amount);
 public record CopyPlanRequest(DateOnly FromMonth, DateOnly ToMonth);
+public record CopyPlanResponse(int Copied);
+/// <summary>Saves several categories' planned amounts for one month in a single transaction (all or nothing).</summary>
+public record SavePlansRequest(DateOnly Month, IReadOnlyList<PlanAmount> Items);
+public record PlanAmount(Guid CategoryId, decimal Amount);
 
 // ---- Summary ----
 public record CategorySummaryDto(

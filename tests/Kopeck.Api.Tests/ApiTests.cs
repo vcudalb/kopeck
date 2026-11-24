@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
-using Kopeck.Api.Auth;
-using Kopeck.Api.Data;
+using Kopeck.Application.Abstractions;
+using Kopeck.Infrastructure.Persistence;
 using Kopeck.Contracts;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -243,5 +243,61 @@ public class ApiTests : IClassFixture<ApiFactory>
         var cat = await Ok<CategoryDto>(await c.PostAsJsonAsync($"/api/budgets/{b.Id}/categories", new CategoryRequest("X", null), Json.Options));
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync($"/api/budgets/{b.Id}/expenses", new ExpenseRequest(cat.Id, new(2026, 10, 1), 1.234m, null), Json.Options)).StatusCode);
         Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync($"/api/budgets/{b.Id}/expenses", new ExpenseRequest(cat.Id, new(2026, 10, 1), 1.23m, null), Json.Options)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Bulk_plan_save_is_all_or_nothing_and_editor_only()
+    {
+        var c = await SignUp("bulk@test.dev");
+        var b = await Ok<BudgetDto>(await c.PostAsJsonAsync("/api/budgets", new BudgetRequest("Bulk", "EUR"), Json.Options));
+        var food = await Ok<CategoryDto>(await c.PostAsJsonAsync($"/api/budgets/{b.Id}/categories", new CategoryRequest("Food", null), Json.Options));
+        var rent = await Ok<CategoryDto>(await c.PostAsJsonAsync($"/api/budgets/{b.Id}/categories", new CategoryRequest("Rent", null), Json.Options));
+        var month = new DateOnly(2026, 10, 1);
+
+        // one invalid row (3 decimals) rejects the whole request: nothing is saved
+        var bad = new SavePlansRequest(month, [new PlanAmount(food.Id, 100), new PlanAmount(rent.Id, 1.234m)]);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync($"/api/budgets/{b.Id}/plans/bulk", bad, Json.Options)).StatusCode);
+        Assert.All(await Ok<List<PlanDto>>(await c.GetAsync($"/api/budgets/{b.Id}/plans?month=2026-10-01")), p => Assert.Equal(0, p.Amount));
+
+        // a category from another budget is refused too
+        var other = await Ok<BudgetDto>(await c.PostAsJsonAsync("/api/budgets", new BudgetRequest("Other", "EUR"), Json.Options));
+        var foreign = await Ok<CategoryDto>(await c.PostAsJsonAsync($"/api/budgets/{other.Id}/categories", new CategoryRequest("Foreign", null), Json.Options));
+        var mixed = new SavePlansRequest(month, [new PlanAmount(food.Id, 100), new PlanAmount(foreign.Id, 5)]);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync($"/api/budgets/{b.Id}/plans/bulk", mixed, Json.Options)).StatusCode);
+
+        // valid request saves every row, and a second save updates in place
+        var good = new SavePlansRequest(month, [new PlanAmount(food.Id, 100), new PlanAmount(rent.Id, 900.5m)]);
+        Assert.Equal(HttpStatusCode.NoContent, (await c.PutAsJsonAsync($"/api/budgets/{b.Id}/plans/bulk", good, Json.Options)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await c.PutAsJsonAsync($"/api/budgets/{b.Id}/plans/bulk",
+            new SavePlansRequest(month, [new PlanAmount(food.Id, 150)]), Json.Options)).StatusCode);
+        var plans = await Ok<List<PlanDto>>(await c.GetAsync($"/api/budgets/{b.Id}/plans?month=2026-10-01"));
+        Assert.Equal((150m, 900.5m), (plans.Single(p => p.CategoryId == food.Id).Amount, plans.Single(p => p.CategoryId == rent.Id).Amount));
+
+        // viewers can't save plans
+        await c.PostAsJsonAsync($"/api/budgets/{b.Id}/shares", new ShareRequest("bulkviewer@test.dev", ShareRole.Viewer), Json.Options);
+        var viewer = await SignUp("bulkviewer@test.dev");
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewer.PutAsJsonAsync($"/api/budgets/{b.Id}/plans/bulk", good, Json.Options)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Expense_can_be_edited_but_only_into_a_category_of_the_same_budget()
+    {
+        var c = await SignUp("edit@test.dev");
+        var b = await Ok<BudgetDto>(await c.PostAsJsonAsync("/api/budgets", new BudgetRequest("Edit", "EUR"), Json.Options));
+        var food = await Ok<CategoryDto>(await c.PostAsJsonAsync($"/api/budgets/{b.Id}/categories", new CategoryRequest("Food", null), Json.Options));
+        var fun = await Ok<CategoryDto>(await c.PostAsJsonAsync($"/api/budgets/{b.Id}/categories", new CategoryRequest("Fun", null), Json.Options));
+        var expense = await Ok<ExpenseDto>(await c.PostAsJsonAsync($"/api/budgets/{b.Id}/expenses", new ExpenseRequest(food.Id, new(2026, 10, 1), 10, "lunch"), Json.Options));
+
+        var updated = await Ok<ExpenseDto>(await c.PutAsJsonAsync($"/api/budgets/{b.Id}/expenses/{expense.Id}",
+            new ExpenseRequest(fun.Id, new(2026, 10, 2), 12.5m, "  cinema  "), Json.Options));
+        Assert.Equal((fun.Id, "Fun", 12.5m, "cinema", "Tester"), (updated.CategoryId, updated.CategoryName, updated.Amount, updated.Note, updated.CreatedBy));
+
+        var other = await Ok<BudgetDto>(await c.PostAsJsonAsync("/api/budgets", new BudgetRequest("Other", "EUR"), Json.Options));
+        var foreign = await Ok<CategoryDto>(await c.PostAsJsonAsync($"/api/budgets/{other.Id}/categories", new CategoryRequest("X", null), Json.Options));
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync($"/api/budgets/{b.Id}/expenses/{expense.Id}",
+            new ExpenseRequest(foreign.Id, new(2026, 10, 2), 1, null), Json.Options)).StatusCode);
+
+        // an expense id from another budget is 404 under this one
+        Assert.Equal(HttpStatusCode.NotFound, (await c.DeleteAsync($"/api/budgets/{other.Id}/expenses/{expense.Id}")).StatusCode);
     }
 }

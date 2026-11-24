@@ -2,11 +2,7 @@ using Kopeck.Mobile.ViewModels;
 
 namespace Kopeck.Mobile.Views;
 
-public partial class ResetPage : ContentPage
+public partial class ResetPage : BasePage
 {
-    public ResetPage(ResetViewModel vm)
-    {
-        InitializeComponent();
-        BindingContext = vm;
-    }
+    public ResetPage(ResetViewModel vm) : base(vm) => InitializeComponent();
 }

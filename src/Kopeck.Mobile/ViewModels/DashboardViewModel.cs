@@ -1,10 +1,30 @@
 using System.Collections.ObjectModel;
-using Kopeck.Contracts;
-using Kopeck.Mobile.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kopeck.Contracts;
+using Kopeck.Mobile.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
+
+/// <summary>Status colours in one place, so every screen speaks the same visual language.</summary>
+internal static class StatusPalette
+{
+    public static readonly Color Over = Color.FromArgb("#D32F2F");
+    public static readonly Color Warning = Color.FromArgb("#F9A825");
+    public static readonly Color Unplanned = Color.FromArgb("#6A1B9A");
+    public static readonly Color Unused = Color.FromArgb("#9E9E9E");
+    public static readonly Color Good = Color.FromArgb("#2E7D32");
+
+    public static Color For(CategoryStatus status) => status switch
+    {
+        CategoryStatus.Over => Over,
+        CategoryStatus.Warning => Warning,
+        CategoryStatus.Unplanned => Unplanned,
+        CategoryStatus.Unused => Unused,
+        _ => Good,
+    };
+}
 
 /// <summary>Presentation of one category's planned-vs-real numbers.</summary>
 public sealed class CategoryRow(CategorySummaryDto c, string currency)
@@ -23,24 +43,17 @@ public sealed class CategoryRow(CategorySummaryDto c, string currency)
     };
 
     public double Progress => Math.Min(1.0, (double)c.PercentUsed / 100.0);
-
-    public Color StatusColor => c.Status switch
-    {
-        CategoryStatus.Over => Color.FromArgb("#D32F2F"),
-        CategoryStatus.Warning => Color.FromArgb("#F9A825"),
-        CategoryStatus.Unplanned => Color.FromArgb("#6A1B9A"),
-        CategoryStatus.Unused => Color.FromArgb("#9E9E9E"),
-        _ => Color.FromArgb("#2E7D32"),
-    };
+    public Color StatusColor => StatusPalette.For(c.Status);
 }
 
-public partial class DashboardViewModel(ViewModelContext context) : BaseViewModel(context)
+public partial class DashboardViewModel(
+    IBudgetsApi budgets, AppState state, INavigationService nav, IDialogService dialogs, ILogger<DashboardViewModel> logger)
+    : BudgetViewModel(state, dialogs, logger)
 {
     public ObservableCollection<CategoryRow> Rows { get; } = [];
     public ObservableCollection<IncomeStreamSummaryDto> Streams { get; } = [];
 
     [ObservableProperty] private string _title = "";
-    [ObservableProperty] private string _monthText = "";
     [ObservableProperty] private string _incomeText = "";
     [ObservableProperty] private string _plannedText = "";
     [ObservableProperty] private string _spentText = "";
@@ -49,49 +62,56 @@ public partial class DashboardViewModel(ViewModelContext context) : BaseViewMode
     [ObservableProperty] private bool _hasOverspend;
     [ObservableProperty] private Color _netColor = Colors.Gray;
 
-    public bool IsOwner => State.IsOwner;
+    public override Task OnAppearingAsync() => RunAsync(LoadAsync);
+
+    [RelayCommand] private Task PreviousMonthAsync() => ShiftMonthAsync(-1);
+    [RelayCommand] private Task NextMonthAsync() => ShiftMonthAsync(1);
+    [RelayCommand] private Task OpenExpensesAsync() => nav.GoToAsync("expenses");
+    [RelayCommand] private Task OpenIncomeAsync() => nav.GoToAsync("income");
+    [RelayCommand] private Task OpenPlanAsync() => nav.GoToAsync("plan");
+    [RelayCommand] private Task OpenCategoriesAsync() => nav.GoToAsync("categories");
+    [RelayCommand] private Task OpenShareAsync() => nav.GoToAsync("share");
 
     [RelayCommand]
-    private Task LoadAsync() => RunAsync(async () =>
+    private Task LeaveAsync() => ConfirmThenRunAsync("Leave budget", "Remove this shared budget from your account?", "Leave", async ct =>
+    {
+        await budgets.LeaveAsync(BudgetId, ct);
+        await nav.GoToAsync("//budgets");
+    });
+
+    [RelayCommand]
+    private Task DeleteBudgetAsync() => ConfirmThenRunAsync("Delete budget",
+        "Delete this budget with all its categories, plans, expenses and income? People it is shared with lose access. This can't be undone.",
+        "Delete", async ct =>
+        {
+            await budgets.DeleteAsync(BudgetId, ct);
+            State.Reset();
+            await nav.GoToAsync("//budgets");
+        });
+
+    private async Task LoadAsync(CancellationToken ct)
     {
         var budget = State.Budget!;
         Title = budget.Role == BudgetRole.Owner ? budget.Name : $"{budget.Name} ({budget.Role}, by {budget.OwnerEmail})";
-        MonthText = State.Month.ToString("MMMM yyyy");
+        RefreshMonthText();
 
-        var s = await Api.GetAsync<MonthSummaryDto>($"{BudgetPath}/summary?month={ApiClient.Month(State.Month)}");
+        var s = await budgets.GetSummaryAsync(BudgetId, State.Month, ct);
         var cur = budget.Currency;
         IncomeText = $"{s.TotalIncome:N2} {cur}";
         PlannedText = $"{s.TotalPlanned:N2} {cur}";
         SpentText = $"{s.TotalSpent:N2} {cur}";
         NetText = $"{s.NetLeft:N2} {cur}";
-        NetColor = Color.FromArgb(s.NetLeft < 0 ? "#D32F2F" : "#2E7D32");
+        NetColor = s.NetLeft < 0 ? StatusPalette.Over : StatusPalette.Good;
         HasOverspend = s.TotalOverspend > 0;
         OverText = $"Overspent by {s.TotalOverspend:N2} {cur} across categories (vs plan)";
 
-        Rows.Clear();
-        foreach (var c in s.Categories) Rows.Add(new CategoryRow(c, cur));
-        Streams.Clear();
-        foreach (var i in s.IncomeStreams) Streams.Add(i);
-    });
-
-    [RelayCommand] private Task PreviousMonthAsync() => ShiftMonthAsync(-1);
-    [RelayCommand] private Task NextMonthAsync() => ShiftMonthAsync(1);
-    [RelayCommand] private Task OpenExpensesAsync() => Nav.GoToAsync("expenses");
-    [RelayCommand] private Task OpenIncomeAsync() => Nav.GoToAsync("income");
-    [RelayCommand] private Task OpenPlanAsync() => Nav.GoToAsync("plan");
-    [RelayCommand] private Task OpenCategoriesAsync() => Nav.GoToAsync("categories");
-    [RelayCommand] private Task OpenShareAsync() => Nav.GoToAsync("share");
-
-    [RelayCommand]
-    private Task LeaveAsync() => ConfirmThenRunAsync("Leave budget", "Remove this shared budget from your account?", "Leave", async () =>
-    {
-        await Api.DeleteAsync($"{BudgetPath}/leave");
-        await Nav.GoToAsync("//budgets");
-    });
+        Rows.ReplaceWith(s.Categories.Select(c => new CategoryRow(c, cur)));
+        Streams.ReplaceWith(s.IncomeStreams);
+    }
 
     private Task ShiftMonthAsync(int months)
     {
         State.Month = State.Month.AddMonths(months);
-        return LoadAsync();
+        return RunAsync(LoadAsync);
     }
 }

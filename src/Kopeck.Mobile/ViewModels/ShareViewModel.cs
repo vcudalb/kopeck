@@ -1,11 +1,14 @@
 using System.Collections.ObjectModel;
-using Kopeck.Contracts;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kopeck.Contracts;
+using Kopeck.Mobile.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-public partial class ShareViewModel(ViewModelContext context) : BaseViewModel(context)
+public partial class ShareViewModel(ISharesApi shares, AppState state, IDialogService dialogs, ILogger<ShareViewModel> logger)
+    : BudgetViewModel(state, dialogs, logger)
 {
     public ObservableCollection<ShareDto> Items { get; } = [];
     public IReadOnlyList<ShareRole> Roles { get; } = [ShareRole.Viewer, ShareRole.Editor];
@@ -13,29 +16,23 @@ public partial class ShareViewModel(ViewModelContext context) : BaseViewModel(co
     [ObservableProperty] private string _email = "";
     [ObservableProperty] private ShareRole _role = ShareRole.Viewer;
 
-    [RelayCommand]
-    private Task LoadAsync() => RunAsync(ReloadAsync);
+    public override Task OnAppearingAsync() => RunAsync(ReloadAsync);
 
     [RelayCommand]
-    private Task AddAsync() => RunAsync(async () =>
+    private Task AddAsync() => RunAsync(async ct =>
     {
-        await Api.PostAsync<ShareDto>($"{BudgetPath}/shares", new ShareRequest(Email, Role));
+        await shares.ShareAsync(BudgetId, new ShareRequest(Email, Role), ct);
         Email = "";
-        await ReloadAsync();
+        await ReloadAsync(ct);
     });
 
     [RelayCommand]
     private Task RemoveAsync(ShareDto share) =>
-        ConfirmThenRunAsync("Stop sharing", $"Remove access for {share.Email}?", "Remove", async () =>
+        ConfirmThenRunAsync("Stop sharing", $"Remove access for {share.Email}?", "Remove", async ct =>
         {
-            await Api.DeleteAsync($"{BudgetPath}/shares/{share.Id}");
-            await ReloadAsync();
+            await shares.RemoveAsync(BudgetId, share.Id, ct);
+            await ReloadAsync(ct);
         });
 
-    private async Task ReloadAsync()
-    {
-        var shares = await Api.GetAsync<List<ShareDto>>($"{BudgetPath}/shares");
-        Items.Clear();
-        foreach (var s in shares) Items.Add(s);
-    }
+    private async Task ReloadAsync(CancellationToken ct) => Items.ReplaceWith(await shares.ListAsync(BudgetId, ct));
 }

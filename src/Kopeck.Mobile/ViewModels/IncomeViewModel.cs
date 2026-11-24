@@ -1,13 +1,15 @@
 using System.Collections.ObjectModel;
-using Kopeck.Contracts;
-using Kopeck.Mobile.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kopeck.Contracts;
+using Kopeck.Mobile.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
 /// <summary>Income entries, booked against any number of revenue streams.</summary>
-public partial class IncomeViewModel(ViewModelContext context) : BaseViewModel(context)
+public partial class IncomeViewModel(IIncomeApi income, AppState state, IDialogService dialogs, ILogger<IncomeViewModel> logger)
+    : BudgetViewModel(state, dialogs, logger)
 {
     public ObservableCollection<IncomeDto> Items { get; } = [];
     public ObservableCollection<IncomeStreamDto> Streams { get; } = [];
@@ -15,56 +17,47 @@ public partial class IncomeViewModel(ViewModelContext context) : BaseViewModel(c
     [ObservableProperty] private IncomeStreamDto? _selectedStream;
     [ObservableProperty] private string _amount = "";
     [ObservableProperty] private string _note = "";
-    [ObservableProperty] private DateTime _date = DateTime.Today;
-    [ObservableProperty] private string _monthText = "";
+    [ObservableProperty] private DateTime _date = state.DefaultEntryDate;
 
-    [RelayCommand]
-    private Task LoadAsync() => RunAsync(ReloadAsync);
+    public override Task OnAppearingAsync() => RunAsync(ReloadAsync);
 
     [RelayCommand]
     private async Task AddStreamAsync()
     {
         var name = await Dialogs.PromptAsync("New revenue stream", "e.g. Main salary, Freelance", maxLength: 80);
         if (string.IsNullOrWhiteSpace(name)) return;
-        await RunAsync(async () =>
+        await RunAsync(async ct =>
         {
-            var stream = await Api.PostAsync<IncomeStreamDto>($"{BudgetPath}/income-streams", new IncomeStreamRequest(name));
-            await ReloadAsync();
+            var stream = await income.CreateStreamAsync(BudgetId, new IncomeStreamRequest(name), ct);
+            await ReloadAsync(ct);
             SelectedStream = Streams.FirstOrDefault(s => s.Id == stream.Id);
         });
     }
 
     [RelayCommand]
-    private Task AddAsync() => RunAsync(async () =>
+    private Task AddAsync() => RunAsync(async ct =>
     {
         if (SelectedStream is null) { Error = "Add an income stream first."; return; }
         if (!Money.TryParse(Amount, out var amount)) { Error = "Enter a valid amount."; return; }
 
-        await Api.PostAsync<IncomeDto>($"{BudgetPath}/incomes",
-            new IncomeRequest(SelectedStream.Id, DateOnly.FromDateTime(Date), amount, Note));
+        await income.CreateAsync(BudgetId, new IncomeRequest(SelectedStream.Id, DateOnly.FromDateTime(Date), amount, Note), ct);
         (Amount, Note) = ("", "");
-        await ReloadAsync();
+        await ReloadAsync(ct);
     });
 
     [RelayCommand]
-    private Task DeleteAsync(IncomeDto income) =>
-        ConfirmThenRunAsync("Delete income", $"{income.StreamName} {income.Amount:N2}?", "Delete", async () =>
+    private Task DeleteAsync(IncomeDto entry) =>
+        ConfirmThenRunAsync("Delete income", $"{entry.StreamName} {entry.Amount:N2}?", "Delete", async ct =>
         {
-            await Api.DeleteAsync($"{BudgetPath}/incomes/{income.Id}");
-            await ReloadAsync();
+            await income.DeleteAsync(BudgetId, entry.Id, ct);
+            await ReloadAsync(ct);
         });
 
-    private async Task ReloadAsync()
+    private async Task ReloadAsync(CancellationToken ct)
     {
-        MonthText = State.Month.ToString("MMMM yyyy");
-
-        var streams = await Api.GetAsync<List<IncomeStreamDto>>($"{BudgetPath}/income-streams");
-        Streams.Clear();
-        foreach (var s in streams) Streams.Add(s);
-        SelectedStream ??= Streams.FirstOrDefault();
-
-        var incomes = await Api.GetAsync<List<IncomeDto>>($"{BudgetPath}/incomes?month={ApiClient.Month(State.Month)}");
-        Items.Clear();
-        foreach (var i in incomes) Items.Add(i);
+        RefreshMonthText();
+        Streams.ReplaceWith(await income.ListStreamsAsync(BudgetId, ct));
+        SelectedStream = Streams.FirstOrDefault(s => s.Id == SelectedStream?.Id) ?? Streams.FirstOrDefault();
+        Items.ReplaceWith(await income.ListAsync(BudgetId, State.Month, ct));
     }
 }

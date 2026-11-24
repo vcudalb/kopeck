@@ -1,12 +1,17 @@
 using System.Collections.ObjectModel;
-using Kopeck.Contracts;
-using Kopeck.Mobile.Services;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kopeck.Contracts;
+using Kopeck.Mobile.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-public partial class ExpensesViewModel(ViewModelContext context) : BaseViewModel(context)
+/// <summary>Expenses of the open month: add, edit (swipe → Edit fills the form) and delete.</summary>
+public partial class ExpensesViewModel(
+    IExpensesApi expenses, ICategoriesApi categories, AppState state, IDialogService dialogs, ILogger<ExpensesViewModel> logger)
+    : BudgetViewModel(state, dialogs, logger)
 {
     public ObservableCollection<ExpenseDto> Items { get; } = [];
     public ObservableCollection<CategoryDto> Categories { get; } = [];
@@ -14,43 +19,64 @@ public partial class ExpensesViewModel(ViewModelContext context) : BaseViewModel
     [ObservableProperty] private CategoryDto? _selectedCategory;
     [ObservableProperty] private string _amount = "";
     [ObservableProperty] private string _note = "";
-    [ObservableProperty] private DateTime _date = DateTime.Today;
-    [ObservableProperty] private string _monthText = "";
+    [ObservableProperty] private DateTime _date = state.DefaultEntryDate;
+
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsEditing), nameof(SubmitText))]
+    private ExpenseDto? _editing;
+
+    public bool IsEditing => Editing is not null;
+    public string SubmitText => IsEditing ? "Save changes" : "Add expense";
+
+    public override Task OnAppearingAsync() => RunAsync(ReloadAsync);
 
     [RelayCommand]
-    private Task LoadAsync() => RunAsync(ReloadAsync);
-
-    [RelayCommand]
-    private Task AddAsync() => RunAsync(async () =>
+    private Task SubmitAsync() => RunAsync(async ct =>
     {
         if (SelectedCategory is null) { Error = "Create a category first."; return; }
         if (!Money.TryParse(Amount, out var amount)) { Error = "Enter a valid amount."; return; }
 
-        await Api.PostAsync<ExpenseDto>($"{BudgetPath}/expenses",
-            new ExpenseRequest(SelectedCategory.Id, DateOnly.FromDateTime(Date), amount, Note));
-        (Amount, Note) = ("", "");
-        await ReloadAsync();
+        var request = new ExpenseRequest(SelectedCategory.Id, DateOnly.FromDateTime(Date), amount, Note);
+        if (Editing is { } editing) await expenses.UpdateAsync(BudgetId, editing.Id, request, ct);
+        else await expenses.CreateAsync(BudgetId, request, ct);
+
+        ClearForm();
+        await ReloadAsync(ct);
     });
 
     [RelayCommand]
+    private void Edit(ExpenseDto expense)
+    {
+        Editing = expense;
+        SelectedCategory = Categories.FirstOrDefault(c => c.Id == expense.CategoryId);
+        Amount = expense.Amount.ToString("0.##", CultureInfo.InvariantCulture);
+        Note = expense.Note ?? "";
+        Date = expense.Date.ToDateTime(TimeOnly.MinValue);
+    }
+
+    [RelayCommand]
+    private void CancelEdit() => ClearForm();
+
+    [RelayCommand]
     private Task DeleteAsync(ExpenseDto expense) =>
-        ConfirmThenRunAsync("Delete expense", $"{expense.CategoryName} {expense.Amount:N2}?", "Delete", async () =>
+        ConfirmThenRunAsync("Delete expense", $"{expense.CategoryName} {expense.Amount:N2}?", "Delete", async ct =>
         {
-            await Api.DeleteAsync($"{BudgetPath}/expenses/{expense.Id}");
-            await ReloadAsync();
+            await expenses.DeleteAsync(BudgetId, expense.Id, ct);
+            if (Editing?.Id == expense.Id) ClearForm();
+            await ReloadAsync(ct);
         });
 
-    private async Task ReloadAsync()
+    private void ClearForm()
     {
-        MonthText = State.Month.ToString("MMMM yyyy");
+        Editing = null;
+        (Amount, Note) = ("", "");
+        Date = State.DefaultEntryDate;
+    }
 
-        var categories = await Api.GetAsync<List<CategoryDto>>($"{BudgetPath}/categories");
-        Categories.Clear();
-        foreach (var c in categories) Categories.Add(c);
-        SelectedCategory ??= Categories.FirstOrDefault();
-
-        var expenses = await Api.GetAsync<List<ExpenseDto>>($"{BudgetPath}/expenses?month={ApiClient.Month(State.Month)}");
-        Items.Clear();
-        foreach (var e in expenses) Items.Add(e);
+    private async Task ReloadAsync(CancellationToken ct)
+    {
+        RefreshMonthText();
+        Categories.ReplaceWith(await categories.ListAsync(BudgetId, ct));
+        SelectedCategory = Categories.FirstOrDefault(c => c.Id == SelectedCategory?.Id) ?? Categories.FirstOrDefault();
+        Items.ReplaceWith(await expenses.ListAsync(BudgetId, State.Month, ct));
     }
 }

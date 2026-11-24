@@ -1,9 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
-using Kopeck.Contracts;
-using Kopeck.Mobile.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kopeck.Contracts;
+using Kopeck.Mobile.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
@@ -17,20 +18,18 @@ public partial class PlanRow(PlanDto plan) : ObservableObject
     private string _amountText = plan.Amount == 0 ? "" : plan.Amount.ToString("0.##", CultureInfo.InvariantCulture);
 }
 
-public partial class PlanViewModel(ViewModelContext context) : BaseViewModel(context)
+public partial class PlanViewModel(IPlansApi plans, AppState state, IDialogService dialogs, ILogger<PlanViewModel> logger)
+    : BudgetViewModel(state, dialogs, logger)
 {
     public ObservableCollection<PlanRow> Rows { get; } = [];
 
-    [ObservableProperty] private string _monthText = "";
+    public override Task OnAppearingAsync() => RunAsync(ReloadAsync);
 
     [RelayCommand]
-    private Task LoadAsync() => RunAsync(ReloadAsync);
-
-    [RelayCommand]
-    private Task SaveAsync() => RunAsync(async () =>
+    private Task SaveAsync() => RunAsync(async ct =>
     {
-        // Validate everything first so a typo in row 5 doesn't leave rows 1-4 saved and the rest not.
-        var changes = new List<PlanRequest>();
+        // Validate every row first, then send them in one request that the server commits all-or-nothing.
+        var changes = new List<PlanAmount>();
         foreach (var row in Rows)
         {
             var amount = 0m;
@@ -39,26 +38,26 @@ public partial class PlanViewModel(ViewModelContext context) : BaseViewModel(con
                 Error = $"Invalid amount for {row.Name}.";
                 return;
             }
-            if (amount != row.OriginalAmount) changes.Add(new PlanRequest(row.CategoryId, State.Month, amount));
+            if (amount != row.OriginalAmount) changes.Add(new PlanAmount(row.CategoryId, amount));
         }
+        if (changes.Count == 0) return;
 
-        foreach (var change in changes) await Api.PutAsync($"{BudgetPath}/plans", change);
-        await ReloadAsync();
+        await plans.SaveAsync(BudgetId, new SavePlansRequest(State.Month, changes), ct);
+        await ReloadAsync(ct);
         await Dialogs.AlertAsync("Saved", "Planned amounts updated.");
     });
 
     [RelayCommand]
-    private Task CopyPreviousMonthAsync() => RunAsync(async () =>
+    private Task CopyPreviousMonthAsync() => RunAsync(async ct =>
     {
-        await Api.PostAsync($"{BudgetPath}/plans/copy", new CopyPlanRequest(State.Month.AddMonths(-1), State.Month));
-        await ReloadAsync();
+        var result = await plans.CopyAsync(BudgetId, new CopyPlanRequest(State.Month.AddMonths(-1), State.Month), ct);
+        await ReloadAsync(ct);
+        if (result.Copied == 0) Error = "Nothing to copy: last month has no plans this month is missing.";
     });
 
-    private async Task ReloadAsync()
+    private async Task ReloadAsync(CancellationToken ct)
     {
-        MonthText = State.Month.ToString("MMMM yyyy");
-        var plans = await Api.GetAsync<List<PlanDto>>($"{BudgetPath}/plans?month={ApiClient.Month(State.Month)}");
-        Rows.Clear();
-        foreach (var p in plans) Rows.Add(new PlanRow(p));
+        RefreshMonthText();
+        Rows.ReplaceWith((await plans.ListAsync(BudgetId, State.Month, ct)).Select(p => new PlanRow(p)));
     }
 }

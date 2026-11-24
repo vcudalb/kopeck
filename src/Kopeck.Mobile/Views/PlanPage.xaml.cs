@@ -2,19 +2,7 @@ using Kopeck.Mobile.ViewModels;
 
 namespace Kopeck.Mobile.Views;
 
-public partial class PlanPage : ContentPage
+public partial class PlanPage : BasePage
 {
-    private readonly PlanViewModel _vm;
-
-    public PlanPage(PlanViewModel vm)
-    {
-        InitializeComponent();
-        BindingContext = _vm = vm;
-    }
-
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        _vm.LoadCommand.Execute(null);
-    }
+    public PlanPage(PlanViewModel vm) : base(vm) => InitializeComponent();
 }

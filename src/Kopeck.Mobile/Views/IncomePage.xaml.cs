@@ -2,19 +2,7 @@ using Kopeck.Mobile.ViewModels;
 
 namespace Kopeck.Mobile.Views;
 
-public partial class IncomePage : ContentPage
+public partial class IncomePage : BasePage
 {
-    private readonly IncomeViewModel _vm;
-
-    public IncomePage(IncomeViewModel vm)
-    {
-        InitializeComponent();
-        BindingContext = _vm = vm;
-    }
-
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        _vm.LoadCommand.Execute(null);
-    }
+    public IncomePage(IncomeViewModel vm) : base(vm) => InitializeComponent();
 }
