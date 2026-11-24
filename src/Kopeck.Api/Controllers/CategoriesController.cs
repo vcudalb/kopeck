@@ -17,11 +17,13 @@ public sealed class CategoriesController(ICategoryService categories) : ApiContr
 
     [HttpPost]
     [BudgetAccess(AccessLevel.Editor)]
+    [ServiceFilter(typeof(RequestValidationFilter<CategoryRequest>))]
     public async Task<IActionResult> Create(Guid budgetId, CategoryRequest request, CancellationToken ct) =>
         CreatedFromResult(await categories.CreateAsync(budgetId, request, ct), c => $"/api/budgets/{budgetId}/categories/{c.Id}");
 
     [HttpPut("{categoryId:guid}")]
     [BudgetAccess(AccessLevel.Editor)]
+    [ServiceFilter(typeof(RequestValidationFilter<CategoryRequest>))]
     public async Task<IActionResult> Update(Guid budgetId, Guid categoryId, CategoryRequest request, CancellationToken ct) =>
         FromResult(await categories.UpdateAsync(budgetId, categoryId, request, ct));
 

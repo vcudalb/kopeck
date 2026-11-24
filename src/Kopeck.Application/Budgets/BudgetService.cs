@@ -13,7 +13,6 @@ namespace Kopeck.Application.Budgets;
 /// </summary>
 public sealed class BudgetService(IKopeckDbContext db, ICurrentUser user) : IBudgetService
 {
-    private static readonly string NameRule = $"Enter a budget name (max {DomainRules.MaxNameLength} characters).";
 
     public async Task<IReadOnlyList<BudgetDto>> ListMineAsync(CancellationToken ct)
     {
@@ -30,8 +29,7 @@ public sealed class BudgetService(IKopeckDbContext db, ICurrentUser user) : IBud
 
     public async Task<Result<BudgetDto>> CreateAsync(BudgetRequest request, CancellationToken ct)
     {
-        if (!DomainRules.IsValidName(request.Name)) return Error.Validation(NameRule);
-        if (DomainRules.NormalizeCurrency(request.Currency) is not { } currency) return Error.Validation("Enter a currency code such as EUR or MDL.");
+        var currency = DomainRules.NormalizeCurrency(request.Currency)!;   // BudgetRequestValidator guarantees a valid code
 
         var budget = new Budget(request.Name, currency, user.Id);
         db.Budgets.Add(budget);
@@ -42,7 +40,6 @@ public sealed class BudgetService(IKopeckDbContext db, ICurrentUser user) : IBud
     /// <summary>Only the name can change: the currency is fixed once amounts exist in it.</summary>
     public async Task<Result> RenameAsync(Guid budgetId, BudgetRequest request, CancellationToken ct)
     {
-        if (!DomainRules.IsValidName(request.Name)) return Error.Validation(NameRule);
         var budget = await db.Budgets.FirstOrDefaultAsync(b => b.Id == budgetId, ct);
         if (budget is null) return Error.NotFound;
 

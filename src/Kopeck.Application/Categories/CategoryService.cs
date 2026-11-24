@@ -10,7 +10,6 @@ namespace Kopeck.Application.Categories;
 /// <summary>Category names are unique per budget (case-insensitive). Two racing creates are caught by the unique index (409).</summary>
 public sealed class CategoryService(IKopeckDbContext db) : ICategoryService
 {
-    private static readonly string NameRule = $"Enter a category name (max {DomainRules.MaxNameLength} characters).";
     private static readonly Error NameTaken = Error.Conflict("A category with this name already exists.");
 
     public async Task<IReadOnlyList<CategoryDto>> ListAsync(Guid budgetId, CancellationToken ct)
@@ -21,7 +20,6 @@ public sealed class CategoryService(IKopeckDbContext db) : ICategoryService
 
     public async Task<Result<CategoryDto>> CreateAsync(Guid budgetId, CategoryRequest request, CancellationToken ct)
     {
-        if (!DomainRules.IsValidName(request.Name)) return Error.Validation(NameRule);
         if (await IsNameTakenAsync(budgetId, request.Name, except: null, ct)) return NameTaken;
 
         var category = new Category(budgetId, request.Name, request.Color);
@@ -34,7 +32,6 @@ public sealed class CategoryService(IKopeckDbContext db) : ICategoryService
     {
         var category = await db.Categories.InBudget(budgetId).FirstOrDefaultAsync(c => c.Id == categoryId, ct);
         if (category is null) return Error.NotFound;
-        if (!DomainRules.IsValidName(request.Name)) return Error.Validation(NameRule);
         if (await IsNameTakenAsync(budgetId, request.Name, except: categoryId, ct)) return NameTaken;
 
         category.Rename(request.Name);

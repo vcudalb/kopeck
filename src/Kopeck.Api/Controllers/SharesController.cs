@@ -17,6 +17,7 @@ public sealed class SharesController(ISharingService sharing) : ApiControllerBas
     public async Task<IActionResult> List(Guid budgetId, CancellationToken ct) => Ok(await sharing.ListAsync(budgetId, ct));
 
     [HttpPost]
+    [ServiceFilter(typeof(RequestValidationFilter<ShareRequest>))]
     public async Task<IActionResult> Share(Guid budgetId, ShareRequest request, CancellationToken ct) =>
         FromResult(await sharing.ShareAsync(budgetId, request, ct));
 

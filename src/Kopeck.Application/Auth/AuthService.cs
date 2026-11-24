@@ -24,10 +24,7 @@ public sealed class AuthService(IKopeckDbContext db, IPasswordHasher passwords, 
 
     public async Task<Result> RegisterAsync(RegisterRequest request)
     {
-        var email = DomainRules.NormalizeEmail(request.Email);
-        if (email is null) return Error.Validation("Enter a valid email address.");
-        if (PasswordPolicy.Validate(request.Password) is { } passwordError) return Error.Validation(passwordError);
-        if (!DomainRules.IsValidName(request.DisplayName)) return Error.Validation($"Enter a display name (max {DomainRules.MaxNameLength} characters).");
+        var email = DomainRules.NormalizeEmail(request.Email)!;   // the request validator guarantees a valid address
 
         var now = clock.GetUtcNow();
         var existing = await FindAsync(email);
@@ -108,7 +105,6 @@ public sealed class AuthService(IKopeckDbContext db, IPasswordHasher passwords, 
 
     public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request)
     {
-        if (PasswordPolicy.Validate(request.NewPassword) is { } passwordError) return Error.Validation(passwordError);
         var user = await FindAsync(request.Email);
         if (user is null) return InvalidCode;
 

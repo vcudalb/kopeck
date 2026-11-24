@@ -19,11 +19,13 @@ public sealed class ExpensesController(IExpenseService expenses) : ApiController
 
     [HttpPost]
     [BudgetAccess(AccessLevel.Editor)]
+    [ServiceFilter(typeof(RequestValidationFilter<ExpenseRequest>))]
     public async Task<IActionResult> Create(Guid budgetId, ExpenseRequest request, CancellationToken ct) =>
         CreatedFromResult(await expenses.CreateAsync(budgetId, request, ct), e => $"/api/budgets/{budgetId}/expenses/{e.Id}");
 
     [HttpPut("{expenseId:guid}")]
     [BudgetAccess(AccessLevel.Editor)]
+    [ServiceFilter(typeof(RequestValidationFilter<ExpenseRequest>))]
     public async Task<IActionResult> Update(Guid budgetId, Guid expenseId, ExpenseRequest request, CancellationToken ct) =>
         FromResult(await expenses.UpdateAsync(budgetId, expenseId, request, ct));
 

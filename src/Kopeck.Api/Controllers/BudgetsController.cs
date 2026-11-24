@@ -18,6 +18,7 @@ public sealed class BudgetsController(IBudgetService budgets, ISummaryService su
     public async Task<IActionResult> ListMine(CancellationToken ct) => Ok(await budgets.ListMineAsync(ct));
 
     [HttpPost]
+    [ServiceFilter(typeof(RequestValidationFilter<BudgetRequest>))]
     public async Task<IActionResult> Create(BudgetRequest request, CancellationToken ct) =>
         CreatedFromResult(await budgets.CreateAsync(request, ct), b => $"/api/budgets/{b.Id}");
 
@@ -33,6 +34,7 @@ public sealed class BudgetsController(IBudgetService budgets, ISummaryService su
 
     [HttpPut("{budgetId:guid}")]
     [BudgetAccess(AccessLevel.Owner)]
+    [ServiceFilter(typeof(RequestValidationFilter<BudgetRequest>))]
     public async Task<IActionResult> Rename(Guid budgetId, BudgetRequest request, CancellationToken ct) =>
         FromResult(await budgets.RenameAsync(budgetId, request, ct));
 

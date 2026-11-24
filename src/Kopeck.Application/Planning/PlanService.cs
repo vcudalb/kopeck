@@ -10,7 +10,6 @@ namespace Kopeck.Application.Planning;
 /// <summary>Planned spend per category per month (the Excel "Planned" column).</summary>
 public sealed class PlanService(IKopeckDbContext db) : IPlanService
 {
-    private static readonly Error InvalidAmount = Error.Validation("Planned amount must be 0 or more (max 2 decimals).");
     private static readonly Error UnknownCategory = Error.Validation("Unknown category.");
 
     /// <summary>Every category with its planned amount for the month (0 when not planned yet).</summary>
@@ -30,8 +29,6 @@ public sealed class PlanService(IKopeckDbContext db) : IPlanService
     public async Task<Result> SaveManyAsync(Guid budgetId, SavePlansRequest request, CancellationToken ct)
     {
         if (request.Items is not { Count: > 0 }) return Result.Success;
-        if (request.Items.Any(i => !DomainRules.IsValidAmount(i.Amount, allowZero: true))) return InvalidAmount;
-        if (request.Items.Select(i => i.CategoryId).Distinct().Count() != request.Items.Count) return Error.Validation("Each category can appear only once.");
 
         var ids = request.Items.Select(i => i.CategoryId).ToList();
         var known = await db.Categories.InBudget(budgetId).CountAsync(c => ids.Contains(c.Id), ct);
@@ -53,7 +50,6 @@ public sealed class PlanService(IKopeckDbContext db) : IPlanService
     {
         var from = request.FromMonth.FirstOfMonth();
         var to = request.ToMonth.FirstOfMonth();
-        if (from == to) return Error.Validation("Choose two different months.");
 
         var alreadyPlanned = await db.Plans.InBudget(budgetId).Where(p => p.Month == to).Select(p => p.CategoryId).ToListAsync(ct);
         var sources = await db.Plans.AsNoTracking().InBudget(budgetId)

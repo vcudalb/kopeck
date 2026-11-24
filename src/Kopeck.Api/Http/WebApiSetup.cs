@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Kopeck.Api.Filters;
 using Kopeck.Application.Abstractions;
 using Kopeck.Contracts;
 using Kopeck.Infrastructure.Identity;
@@ -15,6 +16,8 @@ public static class WebApiSetup
     {
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
+        // [ServiceFilter(typeof(RequestValidationFilter<X>))] resolves the closed type from this open-generic registration.
+        services.AddScoped(typeof(RequestValidationFilter<>));
 
         // ---- MVC controllers; JSON matches the mobile app (Kopeck.Contracts.Json) ----
         services.AddControllers(o =>

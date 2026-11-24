@@ -18,6 +18,7 @@ public sealed class IncomeStreamsController(IIncomeService income) : ApiControll
 
     [HttpPost]
     [BudgetAccess(AccessLevel.Editor)]
+    [ServiceFilter(typeof(RequestValidationFilter<IncomeStreamRequest>))]
     public async Task<IActionResult> Create(Guid budgetId, IncomeStreamRequest request, CancellationToken ct) =>
         CreatedFromResult(await income.CreateStreamAsync(budgetId, request, ct), s => $"/api/budgets/{budgetId}/income-streams/{s.Id}");
 

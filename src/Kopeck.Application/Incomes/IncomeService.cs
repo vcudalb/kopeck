@@ -18,7 +18,6 @@ public sealed class IncomeService(IKopeckDbContext db) : IIncomeService
 
     public async Task<Result<IncomeStreamDto>> CreateStreamAsync(Guid budgetId, IncomeStreamRequest request, CancellationToken ct)
     {
-        if (!DomainRules.IsValidName(request.Name)) return Error.Validation($"Enter a stream name (max {DomainRules.MaxNameLength} characters).");
         var lowered = request.Name.Trim().ToLower();
         if (await db.IncomeStreams.InBudget(budgetId).AnyAsync(s => s.Name.ToLower() == lowered, ct))
             return Error.Conflict("An income stream with this name already exists.");
@@ -51,7 +50,6 @@ public sealed class IncomeService(IKopeckDbContext db) : IIncomeService
 
     public async Task<Result<IncomeDto>> CreateAsync(Guid budgetId, IncomeRequest request, CancellationToken ct)
     {
-        if (!DomainRules.IsValidAmount(request.Amount)) return Error.Validation("Amount must be greater than 0 (max 2 decimals).");
         var stream = await db.IncomeStreams.AsNoTracking().InBudget(budgetId).FirstOrDefaultAsync(s => s.Id == request.StreamId, ct);
         if (stream is null) return Error.Validation("Unknown income stream.");
 

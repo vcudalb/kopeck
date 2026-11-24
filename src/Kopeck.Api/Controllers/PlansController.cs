@@ -21,17 +21,20 @@ public sealed class PlansController(IPlanService plans) : ApiControllerBase
     /// <summary>One category for one month (0 clears it).</summary>
     [HttpPut]
     [BudgetAccess(AccessLevel.Editor)]
+    [ServiceFilter(typeof(RequestValidationFilter<PlanRequest>))]
     public async Task<IActionResult> Set(Guid budgetId, PlanRequest request, CancellationToken ct) =>
         FromResult(await plans.SetAsync(budgetId, request, ct));
 
     /// <summary>Several categories for one month, all or nothing (what the Plan screen's Save uses).</summary>
     [HttpPut("bulk")]
     [BudgetAccess(AccessLevel.Editor)]
+    [ServiceFilter(typeof(RequestValidationFilter<SavePlansRequest>))]
     public async Task<IActionResult> SaveMany(Guid budgetId, SavePlansRequest request, CancellationToken ct) =>
         FromResult(await plans.SaveManyAsync(budgetId, request, ct));
 
     [HttpPost("copy")]
     [BudgetAccess(AccessLevel.Editor)]
+    [ServiceFilter(typeof(RequestValidationFilter<CopyPlanRequest>))]
     public async Task<IActionResult> CopyMissing(Guid budgetId, CopyPlanRequest request, CancellationToken ct) =>
         FromResult(await plans.CopyMissingAsync(budgetId, request, ct));
 }
