@@ -4,6 +4,7 @@ using Kopeck.Contracts;
 using Kopeck.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Kopeck.Api.Http;
@@ -15,6 +16,25 @@ public static class WebApiSetup
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
 
+        // ---- MVC controllers; JSON matches the mobile app (Kopeck.Contracts.Json) ----
+        services.AddControllers(o =>
+            {
+                // Request validation belongs to the IRequestValidator<T> classes, not to implicit [Required] attributes.
+                o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+            })
+            .AddJsonOptions(o =>
+            {
+                foreach (var converter in Json.Options.Converters) o.JsonSerializerOptions.Converters.Add(converter);
+            })
+            .ConfigureApiBehaviorOptions(o =>
+            {
+                // Malformed bodies or missing route/query values: same { "error": "..." } shape as every other 400.
+                o.InvalidModelStateResponseFactory = ctx => new BadRequestObjectResult(new ApiError(string.Join(" ",
+                    ctx.ModelState.Values.SelectMany(v => v.Errors).Select(e =>
+                        string.IsNullOrWhiteSpace(e.ErrorMessage) ? "The request is not valid." : e.ErrorMessage).Distinct())));
+            });
+
+        // ---- authentication: JWT bearer, validated with the same key that signs tokens ----
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
             .Configure<JwtTokenService>((o, jwt) =>
@@ -24,6 +44,7 @@ public static class WebApiSetup
             });
         services.AddAuthorization();
 
+        // ---- brute-force protection for register/login/code endpoints (per client IP) ----
         services.Configure<RateLimitOptions>(config.GetSection(RateLimitOptions.Section));
         services.AddRateLimiter(o =>
         {
@@ -41,10 +62,6 @@ public static class WebApiSetup
         if (config.GetValue<bool>("ForwardedHeaders:Enabled"))
             services.Configure<ForwardedHeadersOptions>(o => o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
 
-        services.ConfigureHttpJsonOptions(o =>
-        {
-            foreach (var converter in Json.Options.Converters) o.SerializerOptions.Converters.Add(converter);
-        });
         services.AddExceptionHandler<UniqueConstraintExceptionHandler>();
         services.AddProblemDetails();
         return services;

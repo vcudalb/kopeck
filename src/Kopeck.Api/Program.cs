@@ -18,8 +18,7 @@ if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Databas
     await app.Services.MigrateDatabaseAsync();
 
 app.UseWebApi();
-app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
-app.MapEndpointModules();
+app.MapControllers();
 
 await app.RunAsync();
 
