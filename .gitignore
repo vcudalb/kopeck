@@ -4,3 +4,5 @@ obj/
 *.db-*
 .vs/
 *.user
+# JetBrains Rider (per-machine IDE settings)
+.idea/
