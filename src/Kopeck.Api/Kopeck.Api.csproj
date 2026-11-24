@@ -1,23 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <!-- HTTP layer and composition root: routing, auth, rate limiting, mapping use-case results to status codes. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="5.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.*" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.*">
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <!-- Needed by `dotnet ef` (this is the startup project; migrations live in Kopeck.Infrastructure). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.*" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kopeck.Application\Kopeck.Application.csproj" />
     <ProjectReference Include="..\Kopeck.Contracts\Kopeck.Contracts.csproj" />
+    <ProjectReference Include="..\Kopeck.Infrastructure\Kopeck.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

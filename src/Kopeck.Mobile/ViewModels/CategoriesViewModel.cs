@@ -1,25 +1,27 @@
 using System.Collections.ObjectModel;
-using Kopeck.Contracts;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kopeck.Contracts;
+using Kopeck.Mobile.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-public partial class CategoriesViewModel(ViewModelContext context) : BaseViewModel(context)
+public partial class CategoriesViewModel(ICategoriesApi categories, AppState state, IDialogService dialogs, ILogger<CategoriesViewModel> logger)
+    : BudgetViewModel(state, dialogs, logger)
 {
     public ObservableCollection<CategoryDto> Items { get; } = [];
 
     [ObservableProperty] private string _newName = "";
 
-    [RelayCommand]
-    private Task LoadAsync() => RunAsync(ReloadAsync);
+    public override Task OnAppearingAsync() => RunAsync(ReloadAsync);
 
     [RelayCommand]
-    private Task AddAsync() => RunAsync(async () =>
+    private Task AddAsync() => RunAsync(async ct =>
     {
-        await Api.PostAsync<CategoryDto>($"{BudgetPath}/categories", new CategoryRequest(NewName, null));
+        await categories.CreateAsync(BudgetId, new CategoryRequest(NewName, null), ct);
         NewName = "";
-        await ReloadAsync();
+        await ReloadAsync(ct);
     });
 
     [RelayCommand]
@@ -27,25 +29,20 @@ public partial class CategoriesViewModel(ViewModelContext context) : BaseViewMod
     {
         var name = await Dialogs.PromptAsync("Rename category", "New name", category.Name, maxLength: 80);
         if (string.IsNullOrWhiteSpace(name) || name == category.Name) return;
-        await RunAsync(async () =>
+        await RunAsync(async ct =>
         {
-            await Api.PutAsync<CategoryDto>($"{BudgetPath}/categories/{category.Id}", new CategoryRequest(name, category.Color));
-            await ReloadAsync();
+            await categories.UpdateAsync(BudgetId, category.Id, new CategoryRequest(name, category.Color), ct);
+            await ReloadAsync(ct);
         });
     }
 
     [RelayCommand]
     private Task DeleteAsync(CategoryDto category) =>
-        ConfirmThenRunAsync("Delete category", $"Delete '{category.Name}'?", "Delete", async () =>
+        ConfirmThenRunAsync("Delete category", $"Delete '{category.Name}'?", "Delete", async ct =>
         {
-            await Api.DeleteAsync($"{BudgetPath}/categories/{category.Id}");
-            await ReloadAsync();
+            await categories.DeleteAsync(BudgetId, category.Id, ct);
+            await ReloadAsync(ct);
         });
 
-    private async Task ReloadAsync()
-    {
-        var categories = await Api.GetAsync<List<CategoryDto>>($"{BudgetPath}/categories");
-        Items.Clear();
-        foreach (var c in categories) Items.Add(c);
-    }
+    private async Task ReloadAsync(CancellationToken ct) => Items.ReplaceWith(await categories.ListAsync(BudgetId, ct));
 }

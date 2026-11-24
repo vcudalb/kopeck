@@ -1,60 +1,81 @@
-using Kopeck.Mobile.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Kopeck.Mobile.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-/// <summary>The services every view model needs, bundled so constructors stay short.</summary>
-public sealed class ViewModelContext(ApiClient api, AppState state, INavigationService nav, IDialogService dialogs, ILoggerFactory logs)
+/// <summary>
+/// Busy/error state and page lifecycle shared by every screen. View models declare their own dependencies
+/// (no service bag), so each constructor shows exactly what the screen uses.
+/// </summary>
+public abstract partial class BaseViewModel(ILogger logger) : ObservableObject
 {
-    public ApiClient Api { get; } = api;
-    public AppState State { get; } = state;
-    public INavigationService Nav { get; } = nav;
-    public IDialogService Dialogs { get; } = dialogs;
-    public ILoggerFactory Logs { get; } = logs;
-}
-
-public abstract partial class BaseViewModel(ViewModelContext context) : ObservableObject
-{
-    private readonly ILogger _log = context.Logs.CreateLogger(typeof(BaseViewModel));
-
-    protected ApiClient Api => context.Api;
-    protected INavigationService Nav => context.Nav;
-    protected IDialogService Dialogs => context.Dialogs;
-    public AppState State => context.State;
+    private CancellationTokenSource? _pending;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsNotBusy))] private bool _isBusy;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasError))] private string _error = "";
 
     public bool IsNotBusy => !IsBusy;
     public bool HasError => !string.IsNullOrEmpty(Error);
-    public bool CanEdit => State.CanEdit;
 
-    /// <summary>Base path of the open budget's API, e.g. <c>/api/budgets/{id}</c>.</summary>
-    protected string BudgetPath => $"/api/budgets/{State.Budget?.Id}";
+    /// <summary>Called by the page each time it appears (load data here).</summary>
+    public virtual Task OnAppearingAsync() => Task.CompletedTask;
+
+    /// <summary>Called by the page when it goes away: the request in flight, if any, is cancelled.</summary>
+    public virtual void OnDisappearing() => _pending?.Cancel();
 
     /// <summary>
-    /// Runs a command body with a busy flag and turns failures into a visible message.
-    /// Expected API errors show the server's text; anything else is logged and shown generically.
+    /// Runs a command body with a busy flag and a cancellation token tied to the page's lifetime, and turns failures
+    /// into a visible message. Expected API errors show the server's text; anything else is logged and shown generically.
     /// </summary>
-    protected async Task RunAsync(Func<Task> action)
+    protected async Task RunAsync(Func<CancellationToken, Task> action)
     {
         if (IsBusy) return;
-        IsBusy = true; Error = "";
-        try { await action(); }
-        catch (ApiException ex) { Error = ex.Message; }
-        catch (OperationCanceledException) { /* navigated away */ }
+        IsBusy = true;
+        Error = "";
+        using var cts = _pending = new CancellationTokenSource();
+        try
+        {
+            await action(cts.Token);
+        }
+        catch (ApiException ex)
+        {
+            Error = ex.Message;
+        }
+        catch (OperationCanceledException)
+        {
+            // the page went away; nothing to show
+        }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Unhandled error in {ViewModel}", GetType().Name);
+            logger.LogError(ex, "Unhandled error in {ViewModel}", GetType().Name);
             Error = "Something went wrong. Please try again.";
         }
-        finally { IsBusy = false; }
+        finally
+        {
+            _pending = null;
+            IsBusy = false;
+        }
     }
+}
+
+/// <summary>Base for the screens of one open budget: knows the budget, the month, the caller's role, and can confirm destructive actions.</summary>
+public abstract partial class BudgetViewModel(AppState state, IDialogService dialogs, ILogger logger) : BaseViewModel(logger)
+{
+    protected AppState State { get; } = state;
+    protected IDialogService Dialogs { get; } = dialogs;
+    protected Guid BudgetId => State.BudgetId;
+
+    [ObservableProperty] private string _monthText = "";
+
+    public bool CanEdit => State.CanEdit;
+    public bool IsOwner => State.IsOwner;
 
     /// <summary>Asks first, then runs; used for destructive actions.</summary>
-    protected async Task ConfirmThenRunAsync(string title, string message, string accept, Func<Task> action)
+    protected async Task ConfirmThenRunAsync(string title, string message, string accept, Func<CancellationToken, Task> action)
     {
         if (await Dialogs.ConfirmAsync(title, message, accept)) await RunAsync(action);
     }
+
+    protected void RefreshMonthText() => MonthText = State.MonthText;
 }

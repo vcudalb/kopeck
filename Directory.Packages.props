@@ -1,0 +1,21 @@
+<Project>
+  <!-- One place for package versions (no floating "8.0.*": builds must be reproducible).
+       The MAUI app keeps its own versions because the MAUI workload pins Microsoft.Maui.* itself. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally Condition="'$(MSBuildProjectName)' != 'Kopeck.Mobile'">true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="MailKit" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.34" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.34" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.34" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.34" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="7.7.3" />
+    <!-- tests -->
+    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.34" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageVersion Include="xunit" Version="2.5.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+</Project>

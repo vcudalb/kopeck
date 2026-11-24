@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="Kopeck.Mobile.Views.BudgetsPage"
+<views:BasePage x:Class="Kopeck.Mobile.Views.BudgetsPage"
+             xmlns:views="clr-namespace:Kopeck.Mobile.Views"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
@@ -34,4 +35,4 @@
             <Button Grid.Column="2" Text="Add" Command="{Binding CreateCommand}" />
         </Grid>
     </Grid>
-</ContentPage>
+</views:BasePage>

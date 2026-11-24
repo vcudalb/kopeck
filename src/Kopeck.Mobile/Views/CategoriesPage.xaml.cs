@@ -2,19 +2,7 @@ using Kopeck.Mobile.ViewModels;
 
 namespace Kopeck.Mobile.Views;
 
-public partial class CategoriesPage : ContentPage
+public partial class CategoriesPage : BasePage
 {
-    private readonly CategoriesViewModel _vm;
-
-    public CategoriesPage(CategoriesViewModel vm)
-    {
-        InitializeComponent();
-        BindingContext = _vm = vm;
-    }
-
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        _vm.LoadCommand.Execute(null);
-    }
+    public CategoriesPage(CategoriesViewModel vm) : base(vm) => InitializeComponent();
 }

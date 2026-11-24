@@ -10,56 +10,41 @@ public sealed class ApiException(string message, HttpStatusCode status) : Except
     public HttpStatusCode Status { get; } = status;
 }
 
-/// <summary>
-/// Thin typed wrapper over one shared <see cref="HttpClient"/> (the app's singleton; reusing it avoids socket exhaustion).
-/// It knows nothing about screens: a rejected token is reported through <see cref="Session.Expired"/>.
-/// </summary>
-public sealed class ApiClient(Session session)
+/// <summary>Raw HTTP transport. View models never use it directly: they go through the typed feature APIs in <c>KopeckApi.cs</c>.</summary>
+public interface IApiClient
 {
-    private const string UrlKey = "api_url";
-    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(20) };
+    Task<T> GetAsync<T>(string path, CancellationToken ct);
+    Task<T> PostAsync<T>(string path, object? body, CancellationToken ct);
+    Task<T> PutAsync<T>(string path, object? body, CancellationToken ct);
+    Task PostAsync(string path, object? body, CancellationToken ct);
+    Task PutAsync(string path, object? body, CancellationToken ct);
+    Task DeleteAsync(string path, CancellationToken ct);
+}
 
-    private static string DefaultUrl =>
-        DeviceInfo.Platform == DevicePlatform.Android ? "http://10.0.2.2:5080" : "http://localhost:5080";
+/// <summary>
+/// Wraps the app's single <see cref="HttpClient"/> (reusing it avoids socket exhaustion), adds the bearer token and turns
+/// failures into <see cref="ApiException"/> with a message fit for the user. It knows nothing about screens:
+/// a rejected token is reported through <see cref="IUserSession.Expired"/>.
+/// </summary>
+public sealed class ApiClient(HttpClient http, IServerSettings server, IUserSession session) : IApiClient
+{
+    public Task<T> GetAsync<T>(string path, CancellationToken ct) => SendAsync<T>(HttpMethod.Get, path, null, ct, expectBody: true);
+    public Task<T> PostAsync<T>(string path, object? body, CancellationToken ct) => SendAsync<T>(HttpMethod.Post, path, body, ct, expectBody: true);
+    public Task<T> PutAsync<T>(string path, object? body, CancellationToken ct) => SendAsync<T>(HttpMethod.Put, path, body, ct, expectBody: true);
+    public Task PostAsync(string path, object? body, CancellationToken ct) => SendAsync<object>(HttpMethod.Post, path, body, ct, expectBody: false);
+    public Task PutAsync(string path, object? body, CancellationToken ct) => SendAsync<object>(HttpMethod.Put, path, body, ct, expectBody: false);
+    public Task DeleteAsync(string path, CancellationToken ct) => SendAsync<object>(HttpMethod.Delete, path, null, ct, expectBody: false);
 
-    /// <summary>Server address, editable on the sign-in screen and stored on the device (not baked into the build).</summary>
-    public static string BaseUrl => Preferences.Default.Get(UrlKey, DefaultUrl);
-
-    /// <summary>Validates and stores the server address. Release builds only accept https so credentials never travel in clear text.</summary>
-    public static bool TrySetBaseUrl(string? input, out string error)
+    private async Task<T> SendAsync<T>(HttpMethod method, string path, object? body, CancellationToken ct, bool expectBody)
     {
-        error = "";
-        if (!Uri.TryCreate(input?.Trim(), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
-        {
-            error = "Enter a full server address, e.g. https://budget.example.com";
-            return false;
-        }
-#if !DEBUG
-        if (uri.Scheme != Uri.UriSchemeHttps) { error = "The server address must use https."; return false; }
-#endif
-        Preferences.Default.Set(UrlKey, uri.GetLeftPart(UriPartial.Authority));
-        return true;
-    }
-
-    public static string Month(DateOnly m) => m.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-
-    public Task<T> GetAsync<T>(string path, CancellationToken ct = default) => SendAsync<T>(HttpMethod.Get, path, null, ct);
-    public Task<T> PostAsync<T>(string path, object? body = null, CancellationToken ct = default) => SendAsync<T>(HttpMethod.Post, path, body, ct);
-    public Task<T> PutAsync<T>(string path, object? body = null, CancellationToken ct = default) => SendAsync<T>(HttpMethod.Put, path, body, ct);
-    public Task PostAsync(string path, object? body = null, CancellationToken ct = default) => SendAsync<object>(HttpMethod.Post, path, body, ct, expectBody: false);
-    public Task PutAsync(string path, object? body = null, CancellationToken ct = default) => SendAsync<object>(HttpMethod.Put, path, body, ct, expectBody: false);
-    public Task DeleteAsync(string path, CancellationToken ct = default) => SendAsync<object>(HttpMethod.Delete, path, null, ct, expectBody: false);
-
-    private async Task<T> SendAsync<T>(HttpMethod method, string path, object? body, CancellationToken ct, bool expectBody = true)
-    {
-        using var request = new HttpRequestMessage(method, BaseUrl + path);
+        using var request = new HttpRequestMessage(method, server.BaseUrl + path);
         if (session.Token is { } token) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         if (body is not null) request.Content = JsonContent.Create(body, body.GetType(), options: Json.Options);
 
         HttpResponseMessage response;
-        try { response = await _http.SendAsync(request, ct); }
+        try { response = await http.SendAsync(request, ct); }
         catch (HttpRequestException) { throw Unreachable(); }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested) { throw Unreachable(); }   // timeout, not user cancel
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested) { throw Unreachable(); }   // timeout, not a cancel
 
         using (response)
         {
@@ -87,6 +72,6 @@ public sealed class ApiClient(Session session)
         return $"Request failed ({(int)response.StatusCode}).";
     }
 
-    private static ApiException Unreachable() =>
-        new($"Can't reach the server at {BaseUrl}. Check your connection or the server address.", 0);
+    private ApiException Unreachable() =>
+        new($"Can't reach the server at {server.BaseUrl}. Check your connection or the server address.", 0);
 }
