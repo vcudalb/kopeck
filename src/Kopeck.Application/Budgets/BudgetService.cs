@@ -7,15 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Budgets;
 
-public interface IBudgetService
-{
-    Task<IReadOnlyList<BudgetDto>> ListMineAsync(CancellationToken ct);
-    Task<Result<BudgetDto>> CreateAsync(BudgetRequest request, CancellationToken ct);
-    Task<Result> RenameAsync(Guid budgetId, BudgetRequest request, CancellationToken ct);
-    Task<Result> DeleteAsync(Guid budgetId, CancellationToken ct);
-    Task<Result> LeaveAsync(Guid budgetId, CancellationToken ct);
-}
-
 /// <summary>
 /// Budget lifecycle. Methods taking a budget id assume the caller's access was already checked
 /// (the API's budget access filter does that for every <c>/api/budgets/{budgetId}</c> route).

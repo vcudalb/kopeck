@@ -8,14 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Expenses;
 
-public interface IExpenseService
-{
-    Task<IReadOnlyList<ExpenseDto>> ListAsync(Guid budgetId, DateOnly month, Guid? categoryId, CancellationToken ct);
-    Task<Result<ExpenseDto>> CreateAsync(Guid budgetId, ExpenseRequest request, CancellationToken ct);
-    Task<Result<ExpenseDto>> UpdateAsync(Guid budgetId, Guid expenseId, ExpenseRequest request, CancellationToken ct);
-    Task<Result> DeleteAsync(Guid budgetId, Guid expenseId, CancellationToken ct);
-}
-
 /// <summary>Every expense belongs to a category of the same budget.</summary>
 public sealed class ExpenseService(IKopeckDbContext db, ICurrentUser user) : IExpenseService
 {

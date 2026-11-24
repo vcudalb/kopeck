@@ -1,7 +1,5 @@
 namespace Kopeck.Domain.Planning;
 
-public enum SpendingStatus { Unused, OnTrack, Warning, Over, Unplanned }
-
 /// <summary>
 /// The Excel "Left" column (<c>Planned - SUMIF(expenses in category)</c>) plus what the spreadsheet lacked:
 /// <see cref="OverBy"/> says by how much a category went over its plan. A pure value, so it is trivially unit tested.

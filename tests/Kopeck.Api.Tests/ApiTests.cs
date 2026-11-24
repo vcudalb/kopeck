@@ -1,46 +1,12 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
-using Kopeck.Application.Abstractions;
 using Kopeck.Infrastructure.Persistence;
 using Kopeck.Contracts;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Kopeck.Api.Tests;
-
-public class CapturingEmail : IEmailSender
-{
-    public readonly List<(string To, string Body)> Sent = [];
-    public Task SendAsync(string to, string subject, string body, CancellationToken ct = default)
-    { lock (Sent) Sent.Add((to, body)); return Task.CompletedTask; }
-    public string LastCode(string to) { lock (Sent) return Regex.Match(Sent.Last(m => m.To == to).Body, @"\d{6}").Value; }
-}
-
-public class ApiFactory : WebApplicationFactory<Program>
-{
-    public CapturingEmail Mail { get; } = new();
-    private readonly SqliteConnection _conn = new("DataSource=:memory:");
-
-    protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder b)
-    {
-        _conn.Open();
-        b.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?> { ["RateLimit:AuthPerMinute"] = "10000" }));
-        b.ConfigureServices(s =>
-        {
-            s.RemoveAll<DbContextOptions<KopeckDb>>();
-            s.AddDbContext<KopeckDb>(o => o.UseSqlite(_conn));
-            s.RemoveAll<IEmailSender>();
-            s.AddSingleton<IEmailSender>(Mail);
-        });
-    }
-    protected override void Dispose(bool disposing) { base.Dispose(disposing); _conn.Dispose(); }
-}
 
 public class ApiTests : IClassFixture<ApiFactory>
 {

@@ -7,13 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Budgets;
 
-public interface ISharingService
-{
-    Task<IReadOnlyList<ShareDto>> ListAsync(Guid budgetId, CancellationToken ct);
-    Task<Result<ShareDto>> ShareAsync(Guid budgetId, ShareRequest request, CancellationToken ct);
-    Task<Result> RevokeAsync(Guid budgetId, Guid shareId, CancellationToken ct);
-}
-
 /// <summary>The owner shares a budget by email as Viewer or Editor. Sharing again with the same email changes the role.</summary>
 public sealed class SharingService(IKopeckDbContext db, ICurrentUser user) : ISharingService
 {

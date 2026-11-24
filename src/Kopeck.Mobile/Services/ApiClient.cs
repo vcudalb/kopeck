@@ -5,22 +5,6 @@ using Kopeck.Contracts;
 
 namespace Kopeck.Mobile.Services;
 
-public sealed class ApiException(string message, HttpStatusCode status) : Exception(message)
-{
-    public HttpStatusCode Status { get; } = status;
-}
-
-/// <summary>Raw HTTP transport. View models never use it directly: they go through the typed feature APIs in <c>KopeckApi.cs</c>.</summary>
-public interface IApiClient
-{
-    Task<T> GetAsync<T>(string path, CancellationToken ct);
-    Task<T> PostAsync<T>(string path, object? body, CancellationToken ct);
-    Task<T> PutAsync<T>(string path, object? body, CancellationToken ct);
-    Task PostAsync(string path, object? body, CancellationToken ct);
-    Task PutAsync(string path, object? body, CancellationToken ct);
-    Task DeleteAsync(string path, CancellationToken ct);
-}
-
 /// <summary>
 /// Wraps the app's single <see cref="HttpClient"/> (reusing it avoids socket exhaustion), adds the bearer token and turns
 /// failures into <see cref="ApiException"/> with a message fit for the user. It knows nothing about screens:

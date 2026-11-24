@@ -7,14 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Categories;
 
-public interface ICategoryService
-{
-    Task<IReadOnlyList<CategoryDto>> ListAsync(Guid budgetId, CancellationToken ct);
-    Task<Result<CategoryDto>> CreateAsync(Guid budgetId, CategoryRequest request, CancellationToken ct);
-    Task<Result<CategoryDto>> UpdateAsync(Guid budgetId, Guid categoryId, CategoryRequest request, CancellationToken ct);
-    Task<Result> DeleteAsync(Guid budgetId, Guid categoryId, CancellationToken ct);
-}
-
 /// <summary>Category names are unique per budget (case-insensitive). Two racing creates are caught by the unique index (409).</summary>
 public sealed class CategoryService(IKopeckDbContext db) : ICategoryService
 {

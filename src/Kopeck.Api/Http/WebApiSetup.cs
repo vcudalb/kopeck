@@ -8,15 +8,6 @@ using Microsoft.Extensions.Options;
 
 namespace Kopeck.Api.Http;
 
-public sealed class RateLimitOptions
-{
-    public const string Section = "RateLimit";
-    public const string AuthPolicy = "auth";
-
-    /// <summary>Requests per minute per client IP on the /api/auth endpoints.</summary>
-    public int AuthPerMinute { get; set; } = 20;
-}
-
 public static class WebApiSetup
 {
     public static IServiceCollection AddWebApi(this IServiceCollection services, IConfiguration config)
@@ -24,7 +15,6 @@ public static class WebApiSetup
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
 
-        // ---- authentication: JWT bearer, validated with the same key that signs tokens ----
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
             .Configure<JwtTokenService>((o, jwt) =>
@@ -34,7 +24,6 @@ public static class WebApiSetup
             });
         services.AddAuthorization();
 
-        // ---- brute-force protection for register/login/code endpoints (per client IP) ----
         services.Configure<RateLimitOptions>(config.GetSection(RateLimitOptions.Section));
         services.AddRateLimiter(o =>
         {
