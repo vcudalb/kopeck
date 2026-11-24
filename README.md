@@ -281,6 +281,8 @@ Tools: `dotnet-ef` 8.0.34 (local tool, `.config/dotnet-tools.json`). SDK: .NET 8
 
 ## Run it
 
+For a step-by-step Windows setup without Android Studio (Android SDK, emulator, Rider), see [SETUP.md](SETUP.md).
+
 ```powershell
 # API (Development: emails, including verification codes, are written to the console instead of sent)
 dotnet run --project src/Kopeck.Api --urls http://0.0.0.0:5080
