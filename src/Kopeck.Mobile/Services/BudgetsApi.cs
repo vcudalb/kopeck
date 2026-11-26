@@ -10,4 +10,6 @@ public sealed class BudgetsApi(IApiClient api) : IBudgetsApi
     public Task LeaveAsync(Guid budgetId, CancellationToken ct) => api.DeleteAsync($"{Routes.Budget(budgetId)}/leave", ct);
     public Task<MonthSummaryDto> GetSummaryAsync(Guid budgetId, DateOnly month, CancellationToken ct) =>
         api.GetAsync<MonthSummaryDto>($"{Routes.Budget(budgetId)}/summary?month={Routes.Month(month)}", ct);
+    public Task<YearSummaryDto> GetYearSummaryAsync(Guid budgetId, int year, CancellationToken ct) =>
+        api.GetAsync<YearSummaryDto>($"{Routes.Budget(budgetId)}/summary/year?year={year}", ct);
 }

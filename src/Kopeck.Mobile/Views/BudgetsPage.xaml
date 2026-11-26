@@ -80,10 +80,11 @@
                     <Border Style="{StaticResource Field}">
                         <Entry Placeholder="e.g. Household" Text="{Binding NewName}" MaxLength="80" />
                     </Border>
-                    <Label Text="Currency" Style="{StaticResource FieldLabel}" />
+                    <Label Text="Default currency" Style="{StaticResource FieldLabel}" />
                     <Border Style="{StaticResource Field}">
-                        <Entry Placeholder="EUR" Text="{Binding NewCurrency}" MaxLength="5" />
+                        <Picker Title="Choose a currency" ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding NewCurrency}" />
                     </Border>
+                    <Label Text="Expenses and plans use it. Income streams and savings pots start in it and can use another one." Style="{StaticResource Caption}" />
                     <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
                         <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
                     </Border>

@@ -31,7 +31,10 @@
                 <DataTemplate x:DataType="vm:PlanRow">
                     <Border Style="{StaticResource Row}" Padding="14,6">
                         <Grid ColumnDefinitions="*,140" ColumnSpacing="12">
-                            <Label Text="{Binding Name}" Style="{StaticResource Strong}" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                            <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                                <Image Source="star_on.png" WidthRequest="14" HeightRequest="14" IsVisible="{Binding IsStarred}" />
+                                <Label Text="{Binding Name}" Style="{StaticResource Strong}" LineBreakMode="TailTruncation" />
+                            </HorizontalStackLayout>
                             <Border Grid.Column="1" Style="{StaticResource Field}" MinimumHeightRequest="44">
                                 <Entry Keyboard="Numeric" Placeholder="0.00" HorizontalTextAlignment="End" Text="{Binding AmountText}"
                                        IsReadOnly="{Binding Source={RelativeSource AncestorType={x:Type vm:PlanViewModel}}, Path=IsReadOnly}" />

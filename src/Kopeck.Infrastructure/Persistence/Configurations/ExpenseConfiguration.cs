@@ -13,7 +13,7 @@ internal sealed class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
         e.HasIndex(x => new { x.BudgetId, x.Date });
         e.Property(x => x.Amount).IsMoney();
         e.Property(x => x.Note).HasMaxLength(DomainRules.MaxNoteLength);
-        e.Property(x => x.CreatedByName).HasMaxLength(DomainRules.MaxNameLength);
+        e.IsAudited();
         // A category with expenses can't be removed from under them.
         e.HasOne(x => x.Category).WithMany().HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.NoAction);
     }

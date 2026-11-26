@@ -78,13 +78,16 @@
             </BoxView>
             <Border Style="{StaticResource Sheet}">
                 <VerticalStackLayout Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
                         <Label Text="{Binding FormTitle}" Style="{StaticResource Title}" VerticalOptions="Center" />
-                        <Button Grid.Column="1" Text="Cancel" Command="{Binding CloseFormCommand}" Style="{StaticResource TextButton}" />
+                        <Button Grid.Column="1" Text="History" Command="{Binding OpenHistoryCommand}" Style="{StaticResource TextButton}"
+                                IsVisible="{Binding IsEditing}" SemanticProperties.Hint="Who added or changed this expense, and what changed" />
+                        <Button Grid.Column="2" Text="Cancel" Command="{Binding CloseFormCommand}" Style="{StaticResource TextButton}" />
                     </Grid>
+                    <Label Text="{Binding AuditLine}" Style="{StaticResource Caption}" IsVisible="{Binding IsEditing}" Margin="0,-6,0,0" />
                     <Label Text="Category" Style="{StaticResource FieldLabel}" />
                     <Border Style="{StaticResource Field}">
-                        <Picker Title="Choose a category" ItemsSource="{Binding Categories}" ItemDisplayBinding="{Binding Name}"
+                        <Picker Title="Choose a category" ItemsSource="{Binding Categories}" ItemDisplayBinding="{Binding ., Converter={StaticResource CategoryLabel}}"
                                 SelectedItem="{Binding SelectedCategory}" />
                     </Border>
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">

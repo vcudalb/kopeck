@@ -6,7 +6,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-/// <summary>Categories of the open budget: "+" adds, tap renames, swipe renames or deletes.</summary>
+/// <summary>
+/// Categories of the open budget: "+" adds, tap renames, swipe deletes, the star marks the ones this person uses most.
+/// Starred categories come first here, in the expense picker, on the Overview and in the plan.
+/// </summary>
 public partial class CategoriesViewModel(ICategoriesApi categories, AppState state, IDialogService dialogs, ILogger<CategoriesViewModel> logger)
     : BudgetViewModel(state, dialogs, logger)
 {
@@ -36,6 +39,14 @@ public partial class CategoriesViewModel(ICategoriesApi categories, AppState sta
             await LoadAsync(ct);
         });
     }
+
+    /// <summary>Stars are personal, so viewers can star too.</summary>
+    [RelayCommand]
+    private Task ToggleStarAsync(CategoryDto category) => RunAsync(async ct =>
+    {
+        await categories.SetStarredAsync(BudgetId, category.Id, !category.IsStarred, ct);
+        await LoadAsync(ct);
+    });
 
     [RelayCommand]
     private Task DeleteAsync(CategoryDto category) =>

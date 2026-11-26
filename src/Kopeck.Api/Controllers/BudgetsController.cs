@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Kopeck.Api.Filters;
 using Kopeck.Application.Budgets;
 using Kopeck.Application.Planning;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Kopeck.Api.Controllers;
 
-/// <summary>Budget lifecycle and the monthly summary (dashboard).</summary>
+/// <summary>Budget lifecycle, the monthly summary (dashboard) and the yearly summary (charts).</summary>
 [Authorize]
 [Route("api/budgets")]
 public sealed class BudgetsController(IBudgetService budgets, ISummaryService summaries) : ApiControllerBase
@@ -26,6 +27,14 @@ public sealed class BudgetsController(IBudgetService budgets, ISummaryService su
     [BudgetAccess]
     public async Task<IActionResult> Summary(Guid budgetId, [FromQuery, BindRequired] DateOnly month, CancellationToken ct) =>
         Ok(await summaries.BuildAsync(BudgetAccessFilter.AccessOf(HttpContext).Budget, month, ct));
+
+    [HttpGet("{budgetId:guid}/summary/year")]
+    [BudgetAccess]
+    public async Task<IActionResult> YearSummary(
+        Guid budgetId,
+        [FromQuery, BindRequired, Range(2000, 2100, ErrorMessage = "Choose a year between 2000 and 2100.")] int year,
+        CancellationToken ct) =>
+        Ok(await summaries.BuildYearAsync(BudgetAccessFilter.AccessOf(HttpContext).Budget, year, ct));
 
     [HttpDelete("{budgetId:guid}/leave")]
     [BudgetAccess]

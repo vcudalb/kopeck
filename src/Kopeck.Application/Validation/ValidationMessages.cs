@@ -10,6 +10,7 @@ public static class ValidationMessages
     public const string PositiveAmount = "Amount must be greater than 0 (max 2 decimals).";
     public const string PlannedAmount = "Planned amount must be 0 or more (max 2 decimals).";
     public const string CategoryRequired = "Choose a category.";
+    public const string InvalidCurrency = "Enter a currency code such as EUR or MDL.";
 
     public static string NameRequired(string what) => $"Enter a {what} name (max {DomainRules.MaxNameLength} characters).";
 }

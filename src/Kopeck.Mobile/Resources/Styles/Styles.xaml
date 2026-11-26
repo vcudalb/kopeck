@@ -5,6 +5,7 @@
                     xmlns:views="clr-namespace:Kopeck.Mobile.Views">
 
     <views:InvertedBoolConverter x:Key="InvertBool" />
+    <views:CategoryLabelConverter x:Key="CategoryLabel" />
 
     <!-- ===== Shell: green navigation bar, light tab bar =====
          Don't set Shell.NavBarHasShadow="False": on Android (MAUI 8) it greys out every page below the sign-in screen. -->

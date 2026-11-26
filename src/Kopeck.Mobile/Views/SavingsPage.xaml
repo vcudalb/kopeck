@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:BasePage x:Class="Kopeck.Mobile.Views.SavingsPage"
+             xmlns:views="clr-namespace:Kopeck.Mobile.Views"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             x:DataType="vm:SavingsViewModel"
+             Title="Savings">
+    <Grid>
+        <Grid RowDefinitions="Auto,*" Padding="16,16,16,0" RowSpacing="12">
+            <VerticalStackLayout Spacing="12">
+                <Border Style="{StaticResource HeroCard}">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Total saved" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="13" />
+                        <Label Text="{Binding TotalText}" TextColor="{StaticResource OnPrimary}" FontSize="24" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                </Border>
+            </VerticalStackLayout>
+
+            <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+                <CollectionView ItemsSource="{Binding Pots}" SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout Padding="16,40" Spacing="6">
+                            <Label Text="No savings pots yet" Style="{StaticResource Title}" HorizontalOptions="Center" />
+                            <Label Text="Tap + to start one, e.g. Emergency fund or Holiday." Style="{StaticResource Muted}"
+                                   HorizontalOptions="Center" HorizontalTextAlignment="Center" IsVisible="{Binding CanEdit}" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+                    <CollectionView.Footer>
+                        <BoxView HeightRequest="96" Color="Transparent" />
+                    </CollectionView.Footer>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SavingsPotRow">
+                            <Border Style="{StaticResource Card}" Padding="14" Margin="0,4">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SavingsViewModel}}, Path=OpenCommand}"
+                                                          CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6">
+                                    <Ellipse Grid.RowSpan="2" Fill="{Binding Color}" WidthRequest="12" HeightRequest="12" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Strong}" LineBreakMode="TailTruncation" />
+                                    <Label Grid.Column="2" Text="{Binding BalanceText}" Style="{StaticResource Strong}" />
+                                    <Label Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding TargetText}" Style="{StaticResource Caption}" />
+                                    <ProgressBar Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Progress="{Binding Progress}" ProgressColor="{Binding Color}"
+                                                 IsVisible="{Binding HasTarget}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+        </Grid>
+
+        <Border Style="{StaticResource Fab}" IsVisible="{Binding ShowAddButton}" SemanticProperties.Description="New savings pot">
+            <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding OpenFormCommand}" /></Border.GestureRecognizers>
+            <Image Source="plus.png" WidthRequest="24" HeightRequest="24" />
+        </Border>
+
+        <!-- New pot sheet -->
+        <Grid IsVisible="{Binding IsFormOpen}">
+            <BoxView Color="{StaticResource Scrim}">
+                <BoxView.GestureRecognizers><TapGestureRecognizer Command="{Binding CloseFormCommand}" /></BoxView.GestureRecognizers>
+            </BoxView>
+            <Border Style="{StaticResource Sheet}">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="New savings pot" Style="{StaticResource Title}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Cancel" Command="{Binding CloseFormCommand}" Style="{StaticResource TextButton}" />
+                    </Grid>
+                    <Label Text="Name" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="e.g. Emergency fund" Text="{Binding NewName}" MaxLength="80" />
+                    </Border>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+                        <Label Text="Currency" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Column="1" Text="Target (optional)" Style="{StaticResource FieldLabel}" />
+                        <Border Grid.Row="1" Style="{StaticResource Field}">
+                            <Picker Title="Currency" ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding NewCurrency}" />
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Field}">
+                            <Entry Placeholder="e.g. 5000" Keyboard="Numeric" Text="{Binding NewTarget}" />
+                        </Border>
+                    </Grid>
+                    <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                        <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                    </Border>
+                    <Button Text="Create pot" Command="{Binding CreateCommand}" IsEnabled="{Binding IsNotBusy}" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</views:BasePage>

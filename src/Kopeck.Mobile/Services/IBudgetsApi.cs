@@ -9,4 +9,5 @@ public interface IBudgetsApi
     Task DeleteAsync(Guid budgetId, CancellationToken ct);
     Task LeaveAsync(Guid budgetId, CancellationToken ct);
     Task<MonthSummaryDto> GetSummaryAsync(Guid budgetId, DateOnly month, CancellationToken ct);
+    Task<YearSummaryDto> GetYearSummaryAsync(Guid budgetId, int year, CancellationToken ct);
 }

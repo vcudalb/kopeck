@@ -4,6 +4,7 @@ using Kopeck.Application.Categories;
 using Kopeck.Application.Expenses;
 using Kopeck.Application.Incomes;
 using Kopeck.Application.Planning;
+using Kopeck.Application.Savings;
 using Kopeck.Application.Validation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<History.EntryAudit>();
         services.AddScoped<IBudgetAccessResolver, BudgetAccessResolver>();
         services.AddScoped<IBudgetService, BudgetService>();
         services.AddScoped<ISharingService, SharingService>();
@@ -22,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IIncomeService, IncomeService>();
         services.AddScoped<IPlanService, PlanService>();
+        services.AddScoped<ISavingsService, SavingsService>();
         services.AddScoped<ISummaryService, SummaryService>();
 
         services.AddScoped<IRequestPipelineExecutor, RequestPipelineExecutor>();

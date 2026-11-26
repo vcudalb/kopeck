@@ -5,7 +5,9 @@ namespace Kopeck.Mobile.ViewModels;
 /// <summary>Presentation of one category's planned-vs-real numbers.</summary>
 public sealed class CategoryRow(CategorySummaryDto c, string currency)
 {
+    public Guid CategoryId => c.CategoryId;
     public string Name => c.Name;
+    public bool IsStarred => c.IsStarred;
 
     /// <summary>"120.00 of 300.00 EUR" (or just the spent amount when there is no plan).</summary>
     public string SpentOfPlanText => c.Planned > 0 ? $"{c.Spent:N2} of {c.Planned:N2} {currency}" : $"{c.Spent:N2} {currency} spent";

@@ -13,5 +13,9 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("reset", typeof(ResetPage));
         Routing.RegisterRoute("categories", typeof(CategoriesPage));
         Routing.RegisterRoute("share", typeof(SharePage));
+        Routing.RegisterRoute("plan", typeof(PlanPage));
+        Routing.RegisterRoute("year", typeof(YearPage));
+        Routing.RegisterRoute("savings-pot", typeof(SavingsPotPage));
+        Routing.RegisterRoute("history", typeof(HistoryPage));
     }
 }

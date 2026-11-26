@@ -1,14 +1,16 @@
 using Kopeck.Application.Abstractions;
 using Kopeck.Application.Common;
+using Kopeck.Application.History;
 using Kopeck.Contracts;
 using Kopeck.Domain.Common;
+using Kopeck.Domain.History;
 using Kopeck.Domain.Incomes;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kopeck.Application.Incomes;
 
 /// <summary>Revenue streams (e.g. "Main salary", "Freelance") and the dated income entries booked against them.</summary>
-public sealed class IncomeService(IKopeckDbContext db) : IIncomeService
+public sealed class IncomeService(IKopeckDbContext db, EntryAudit audit) : IIncomeService
 {
     public async Task<IReadOnlyList<IncomeStreamDto>> ListStreamsAsync(Guid budgetId, CancellationToken ct)
     {
@@ -22,7 +24,8 @@ public sealed class IncomeService(IKopeckDbContext db) : IIncomeService
         if (await db.IncomeStreams.InBudget(budgetId).AnyAsync(s => s.Name.ToLower() == lowered, ct))
             return Error.Conflict("An income stream with this name already exists.");
 
-        var stream = new IncomeStream(budgetId, request.Name);
+        var currency = await db.CurrencyOrDefaultAsync(budgetId, request.Currency, ct);
+        var stream = new IncomeStream(budgetId, request.Name, currency);
         db.IncomeStreams.Add(stream);
         await db.SaveChangesAsync(ct);
         return stream.ToDto();
@@ -42,10 +45,9 @@ public sealed class IncomeService(IKopeckDbContext db) : IIncomeService
     public async Task<IReadOnlyList<IncomeDto>> ListAsync(Guid budgetId, DateOnly month, CancellationToken ct)
     {
         var (start, end) = month.MonthRange();
-        return await db.Incomes.AsNoTracking().InBudget(budgetId).Where(i => i.Date >= start && i.Date < end)
-            .OrderByDescending(i => i.Date)
-            .Select(i => new IncomeDto(i.Id, i.StreamId, i.Stream!.Name, i.Date, i.Amount, i.Note))
-            .ToListAsync(ct);
+        var incomes = await db.Incomes.AsNoTracking().InBudget(budgetId).Where(i => i.Date >= start && i.Date < end)
+            .Include(i => i.Stream).OrderByDescending(i => i.Date).ThenByDescending(i => i.CreatedAt).ToListAsync(ct);
+        return incomes.Select(i => i.ToDto(i.Stream!)).ToList();
     }
 
     public async Task<Result<IncomeDto>> CreateAsync(Guid budgetId, IncomeRequest request, CancellationToken ct)
@@ -55,17 +57,22 @@ public sealed class IncomeService(IKopeckDbContext db) : IIncomeService
 
         var income = new Income(budgetId, stream.Id, request.Date, request.Amount, request.Note);
         db.Incomes.Add(income);
+        audit.Created(income, budgetId, EntryKind.Income, income.Id, Values(income, stream.Name));
         await db.SaveChangesAsync(ct);
-        return income.ToDto(stream.Name);
+        return income.ToDto(stream);
     }
 
     public async Task<Result> DeleteAsync(Guid budgetId, Guid incomeId, CancellationToken ct)
     {
-        var income = await db.Incomes.InBudget(budgetId).FirstOrDefaultAsync(i => i.Id == incomeId, ct);
+        var income = await db.Incomes.InBudget(budgetId).Include(i => i.Stream).FirstOrDefaultAsync(i => i.Id == incomeId, ct);
         if (income is null) return Error.NotFound;
 
+        audit.Deleted(budgetId, EntryKind.Income, income.Id, Values(income, income.Stream!.Name));
         db.Incomes.Remove(income);
         await db.SaveChangesAsync(ct);
         return Result.Success;
     }
+
+    private static IReadOnlyList<(string, string?)> Values(Income i, string streamName) =>
+        [("Stream", streamName), ("Date", EntryAudit.Date(i.Date)), ("Amount", EntryAudit.Amount(i.Amount)), ("Note", i.Note)];
 }

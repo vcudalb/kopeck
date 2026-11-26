@@ -26,8 +26,9 @@
     <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#2E7D32" BaseSize="128,128" />
     <MauiImage Include="Resources\Images\*.svg" />
     <MauiImage Update="Resources\Images\plus.svg" TintColor="#FFFFFF" />
-    <MauiImage Update="Resources\Images\chevron_left.svg;Resources\Images\chevron_right.svg;Resources\Images\ic_tag.svg;Resources\Images\ic_share.svg;Resources\Images\ic_swap.svg;Resources\Images\ic_logout.svg;Resources\Images\ic_server.svg" TintColor="#2E7D32" />
-    <MauiImage Update="Resources\Images\row_chevron.svg" TintColor="#9AA39C" />
+    <MauiImage Update="Resources\Images\chevron_left.svg;Resources\Images\chevron_right.svg;Resources\Images\ic_tag.svg;Resources\Images\ic_plan.svg;Resources\Images\ic_chart.svg;Resources\Images\ic_add_circle.svg;Resources\Images\ic_share.svg;Resources\Images\ic_swap.svg;Resources\Images\ic_logout.svg;Resources\Images\ic_server.svg" TintColor="#2E7D32" />
+    <MauiImage Update="Resources\Images\row_chevron.svg;Resources\Images\star_off.svg" TintColor="#9AA39C" />
+    <MauiImage Update="Resources\Images\star_on.svg" TintColor="#C27C00" />
     <MauiImage Update="Resources\Images\ic_leave.svg;Resources\Images\ic_trash.svg" TintColor="#C62828" />
   </ItemGroup>
   <ItemGroup>

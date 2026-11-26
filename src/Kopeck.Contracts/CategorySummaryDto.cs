@@ -6,4 +6,5 @@ public record CategorySummaryDto(
     decimal Left,      // Planned - Spent (negative when overspent)
     decimal OverBy,    // how much more than planned was spent (0 if not over)
     decimal PercentUsed,
-    CategoryStatus Status);
+    CategoryStatus Status,
+    bool IsStarred = false);   // the caller's own star; starred rows come first

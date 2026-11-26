@@ -10,5 +10,7 @@ public sealed class ExpensesApi(IApiClient api) : IExpensesApi
         api.PostAsync<ExpenseDto>($"{Routes.Budget(budgetId)}/expenses", request, ct);
     public Task<ExpenseDto> UpdateAsync(Guid budgetId, Guid expenseId, ExpenseRequest request, CancellationToken ct) =>
         api.PutAsync<ExpenseDto>($"{Routes.Budget(budgetId)}/expenses/{expenseId}", request, ct);
+    public Task<List<EntryChangeDto>> HistoryAsync(Guid budgetId, Guid expenseId, CancellationToken ct) =>
+        api.GetAsync<List<EntryChangeDto>>($"{Routes.Budget(budgetId)}/expenses/{expenseId}/history", ct);
     public Task DeleteAsync(Guid budgetId, Guid expenseId, CancellationToken ct) => api.DeleteAsync($"{Routes.Budget(budgetId)}/expenses/{expenseId}", ct);
 }

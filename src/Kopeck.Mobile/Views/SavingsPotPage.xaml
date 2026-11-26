@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:BasePage x:Class="Kopeck.Mobile.Views.SavingsPotPage"
+             xmlns:views="clr-namespace:Kopeck.Mobile.Views"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
+             x:DataType="vm:SavingsPotViewModel"
+             Title="{Binding Pot.Name}">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Edit" Command="{Binding OpenEditCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,*" Padding="16,16,16,0" RowSpacing="12">
+            <!-- Balance and target -->
+            <Border Style="{StaticResource HeroCard}">
+                <VerticalStackLayout Spacing="10">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="In this pot" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="13" />
+                        <Label Text="{Binding Pot.BalanceText}" TextColor="{StaticResource OnPrimary}" FontSize="30" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                    <ProgressBar Progress="{Binding Pot.Progress}" ProgressColor="{StaticResource OnPrimary}" IsVisible="{Binding Pot.HasTarget}" />
+                    <Label Text="{Binding Pot.TargetText}" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="13" />
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout Grid.Row="1" Spacing="12">
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding CanEdit}">
+                    <Button Text="Add money" Command="{Binding DepositCommand}" />
+                    <Button Grid.Column="1" Text="Take out" Command="{Binding WithdrawCommand}" Style="{StaticResource SecondaryButton}" />
+                </Grid>
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                </Border>
+                <Label Text="HISTORY" Style="{StaticResource SectionHeader}" />
+            </VerticalStackLayout>
+
+            <RefreshView Grid.Row="2" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+                <CollectionView ItemsSource="{Binding Entries}" SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout Padding="16,30" Spacing="6">
+                            <Label Text="Nothing in this pot yet" Style="{StaticResource Title}" HorizontalOptions="Center" />
+                            <Label Text="Tap Add money to make the first deposit." Style="{StaticResource Muted}" HorizontalOptions="Center" IsVisible="{Binding CanEdit}" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+                    <CollectionView.Footer>
+                        <BoxView HeightRequest="24" Color="Transparent" />
+                    </CollectionView.Footer>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SavingsEntryRow">
+                            <SwipeView BackgroundColor="Transparent" Margin="0,4">
+                                <SwipeView.RightItems>
+                                    <SwipeItems>
+                                        <SwipeItem Text="Delete" BackgroundColor="{StaticResource Danger}"
+                                                   IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:SavingsPotViewModel}}, Path=CanEdit}"
+                                                   Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SavingsPotViewModel}}, Path=DeleteEntryCommand}"
+                                                   CommandParameter="{Binding .}" />
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
+                                <Border Style="{StaticResource Row}" Margin="0">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                            <Label Text="{Binding Title}" Style="{StaticResource Strong}" />
+                                            <Label Text="{Binding Details}" Style="{StaticResource Caption}" LineBreakMode="TailTruncation" IsVisible="{Binding HasDetails}" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                            <Label Text="{Binding AmountText}" Style="{StaticResource Strong}" TextColor="{Binding AmountColor}" HorizontalOptions="End" />
+                                            <Label Text="{Binding Date, StringFormat='{0:d MMM yyyy}'}" Style="{StaticResource Caption}" HorizontalOptions="End" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </SwipeView>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+        </Grid>
+
+        <!-- Add / take out sheet -->
+        <Grid IsVisible="{Binding IsFormOpen}">
+            <BoxView Color="{StaticResource Scrim}">
+                <BoxView.GestureRecognizers><TapGestureRecognizer Command="{Binding CloseFormCommand}" /></BoxView.GestureRecognizers>
+            </BoxView>
+            <Border Style="{StaticResource Sheet}">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="{Binding FormTitle}" Style="{StaticResource Title}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Cancel" Command="{Binding CloseFormCommand}" Style="{StaticResource TextButton}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+                        <Label Text="{Binding AmountLabel}" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Column="1" Text="Date" Style="{StaticResource FieldLabel}" />
+                        <Border Grid.Row="1" Style="{StaticResource Field}">
+                            <Entry Placeholder="0.00" Keyboard="Numeric" Text="{Binding Amount}" />
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Field}">
+                            <DatePicker Date="{Binding Date}" />
+                        </Border>
+                    </Grid>
+                    <Label Text="Note" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="Optional" Text="{Binding Note}" MaxLength="200" />
+                    </Border>
+                    <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                        <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                    </Border>
+                    <Button Text="{Binding SaveText}" Command="{Binding SaveEntryCommand}" IsEnabled="{Binding IsNotBusy}" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Pot settings sheet -->
+        <Grid IsVisible="{Binding IsEditOpen}">
+            <BoxView Color="{StaticResource Scrim}">
+                <BoxView.GestureRecognizers><TapGestureRecognizer Command="{Binding CloseEditCommand}" /></BoxView.GestureRecognizers>
+            </BoxView>
+            <Border Style="{StaticResource Sheet}">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Edit pot" Style="{StaticResource Title}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Cancel" Command="{Binding CloseEditCommand}" Style="{StaticResource TextButton}" />
+                    </Grid>
+                    <Label Text="Name" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource Field}">
+                        <Entry Text="{Binding EditName}" MaxLength="80" IsReadOnly="{Binding IsReadOnly}" />
+                    </Border>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+                        <Label Text="Currency" Style="{StaticResource FieldLabel}" />
+                        <Label Grid.Column="1" Text="Target (optional)" Style="{StaticResource FieldLabel}" />
+                        <Border Grid.Row="1" Style="{StaticResource Field}">
+                            <Picker Title="Currency" ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding EditCurrency}"
+                                    IsEnabled="{Binding CanChangeCurrency}" />
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Field}">
+                            <Entry Placeholder="No target" Keyboard="Numeric" Text="{Binding EditTarget}" IsReadOnly="{Binding IsReadOnly}" />
+                        </Border>
+                    </Grid>
+                    <Label Text="The currency can only change while the pot is empty." Style="{StaticResource Caption}"
+                           IsVisible="{Binding CanChangeCurrency, Converter={StaticResource InvertBool}}" />
+                    <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                        <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
+                    </Border>
+                    <Button Text="Save" Command="{Binding SaveEditCommand}" IsEnabled="{Binding IsNotBusy}" IsVisible="{Binding CanEdit}" />
+                    <Button Text="Delete pot" Command="{Binding DeletePotCommand}" Style="{StaticResource DangerButton}" IsVisible="{Binding CanEdit}" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</views:BasePage>
