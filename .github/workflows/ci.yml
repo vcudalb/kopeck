@@ -37,15 +37,63 @@ jobs:
         run: dotnet build tests/Kopeck.Api.Tests -c Release
 
       - name: Test
-        run: dotnet test tests/Kopeck.Api.Tests -c Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
+        run: >
+          dotnet test tests/Kopeck.Api.Tests -c Release --no-build
+          --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
+          --collect:"XPlat Code Coverage" --settings tests/coverage.runsettings
+
+      # Counts and coverage on the run's summary page, plus the badge files for the README.
+      - name: Test report
+        if: ${{ !cancelled() && hashFiles('TestResults/*.trx') != '' }}
+        run: python3 .github/scripts/test_report.py TestResults badges >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test results
-        if: always()
+        if: ${{ !cancelled() && hashFiles('TestResults/*.trx') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: TestResults/*.trx
+          path: |
+            TestResults/*.trx
+            TestResults/**/coverage.cobertura.xml
           retention-days: 7
+
+      - name: Upload badge files
+        if: ${{ !cancelled() && hashFiles('badges/*.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: badges
+          path: badges/*.json
+          retention-days: 1
+
+  # Publishes tests.json / coverage.json to the orphan `badges` branch; the README's shields.io badges read them.
+  # Only for pushes to develop, so PRs never change the badges. This is the only job that may write to the repo.
+  badges:
+    name: Update badges
+    needs: api
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: download
+        uses: actions/download-artifact@v4
+        continue-on-error: true   # no badge files when the build failed; the CI badge shows that already
+        with:
+          name: badges
+          path: ${{ runner.temp }}/badges
+
+      - name: Push to the badges branch
+        if: steps.download.outcome == 'success'
+        run: |
+          git switch --orphan badges
+          cp "$RUNNER_TEMP"/badges/*.json .
+          git add *.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "badges for ${GITHUB_SHA::7}"
+          git push -q -f origin badges
 
   mobile-android:
     name: Mobile build (Android)
