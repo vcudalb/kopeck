@@ -12,5 +12,6 @@ internal sealed class IncomeStreamConfiguration : IEntityTypeConfiguration<Incom
         e.BelongsToBudget();
         e.HasIndex(s => new { s.BudgetId, s.Name }).IsUnique();
         e.Property(s => s.Name).HasMaxLength(DomainRules.MaxNameLength);
+        e.Property(s => s.Currency).HasMaxLength(DomainRules.MaxCurrencyLength);
     }
 }

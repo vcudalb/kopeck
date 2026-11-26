@@ -8,7 +8,7 @@ Status key: ✅ implemented and covered by automated tests · 🟡 implemented, 
 | # | Requirement | Status | How it is met |
 |---|---|---|---|
 | R1 | MAUI app for Android and iOS | 🟡 | .NET 8 MAUI project (`src/Kopeck.Mobile`). The Android build passes in CI, and the app runs on the Android emulator (API 34), where the main flows were checked by hand. Not yet run on a real Android phone. The iOS build has never been run and needs a Mac with Xcode. |
-| R2 | Create new categories | ✅ | Categories screen: add, rename and delete. Names are unique per budget. A category with expenses cannot be deleted (409). |
+| R2 | Create new categories | ✅ | Categories screen: add, rename and delete. Names are unique per budget. A category with expenses cannot be deleted (409). Each person can star categories so they come first. |
 | R3 | Assign categories to expenses | ✅ | Each expense requires a category. Expenses screen: add, edit and delete. |
 | R4 | Multiple revenue streams | ✅ | Income screen: any number of named streams, with income entries dated per month. |
 | R5 | See how much money is left per category | ✅ | Dashboard shows Planned, Spent and Left (Planned − Spent) per category for the chosen month. |
@@ -25,10 +25,12 @@ Status key: ✅ implemented and covered by automated tests · 🟡 implemented, 
 | Left = Planned − sum of expenses per category | Dashboard "Left" and "Over by" |
 | Expense list (Amount, Category) | Expenses screen |
 | Details sheet: Salaries and Other income by month | Income screen with multiple streams |
+| MDL/EUR savings sheet | Savings tab: pots with their own currency, target and history |
+| (new) charts | Overview spending split; Year screen with monthly bars and per-category totals |
 | Duplicating last month's sheet | "Copy missing amounts from previous month" on the Plan screen |
 | Sharing the file | Share dashboard |
 
-Not carried over, on purpose: the MDL/EUR savings and conversion sheet (a budget has one currency) and the weekly split of Home into W1–W5.
+Not carried over, on purpose: currency conversion (amounts in different currencies are listed side by side, never converted) and the weekly split of Home into W1–W5.
 
 ## 3. Account and security behaviour (implemented)
 
@@ -43,7 +45,7 @@ Not carried over, on purpose: the MDL/EUR savings and conversion sheet (a budget
 
 | Part | Choice |
 |---|---|
-| App | .NET 8 MAUI, MVVM with CommunityToolkit.Mvvm. Shell navigation: sign-in → budget list → bottom tabs (Overview, Expenses, Income, Plan, More) |
+| App | .NET 8 MAUI, MVVM with CommunityToolkit.Mvvm. Shell navigation: sign-in → budget list → bottom tabs (Overview, Expenses, Income, Savings, More); the monthly plan is pushed from Overview and More |
 | API | ASP.NET Core 8 Web API with controllers, EF Core with SQLite and migrations |
 | Auth and email | JWT bearer tokens, MailKit over SMTP |
 | Shared | `Kopeck.Contracts` (DTOs used by app and API) |
@@ -62,7 +64,7 @@ Not carried over, on purpose: the MDL/EUR savings and conversion sheet (a budget
 
 - ❌ No refresh tokens. The 7-day token has no renewal.
 - ❌ No request cancellation from the view models.
-- ❌ One currency per budget.
+- ❌ No currency conversion. Expenses and plans use the budget currency; income streams and savings pots can use others, shown separately.
 - ❌ No recurring expenses, charts, or import of the existing xlsx.
 - ❌ The iOS `Info.plist` still allows local HTTP. Remove that before a release.
 - ❌ The app ID `com.example.kopeck` is a placeholder and must be changed before publishing.

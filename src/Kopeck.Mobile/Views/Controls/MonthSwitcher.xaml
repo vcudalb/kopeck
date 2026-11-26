@@ -1,20 +1,26 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- "‹ November 2026 ›": switches the month for every budget tab (the month lives in AppState). -->
+<!--
+  "‹ November 2026 ›": switches the month for every budget screen (the month lives in AppState).
+  The arrows are plain images with a tap target around them: on Android an ImageButton with padding can lay its icon
+  out at a tiny size on pushed pages (the monthly plan), the same issue the floating "+" button had.
+-->
 <ContentView x:Class="Kopeck.Mobile.Views.Controls.MonthSwitcher"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
              x:DataType="vm:BudgetViewModel">
     <Border Style="{StaticResource Card}" Padding="4">
-        <Grid ColumnDefinitions="44,*,44">
-            <ImageButton Source="chevron_left.png" Command="{Binding PreviousMonthCommand}"
-                         BackgroundColor="Transparent" Padding="10" HeightRequest="44" WidthRequest="44"
-                         SemanticProperties.Description="Previous month" />
+        <Grid ColumnDefinitions="44,*,44" HeightRequest="44">
+            <Grid SemanticProperties.Description="Previous month">
+                <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding PreviousMonthCommand}" /></Grid.GestureRecognizers>
+                <Image Source="chevron_left.png" WidthRequest="24" HeightRequest="24" HorizontalOptions="Center" VerticalOptions="Center" />
+            </Grid>
             <Label Grid.Column="1" Text="{Binding MonthText}" Style="{StaticResource Strong}" FontSize="16"
                    HorizontalOptions="Center" VerticalOptions="Center" />
-            <ImageButton Grid.Column="2" Source="chevron_right.png" Command="{Binding NextMonthCommand}"
-                         BackgroundColor="Transparent" Padding="10" HeightRequest="44" WidthRequest="44"
-                         SemanticProperties.Description="Next month" />
+            <Grid Grid.Column="2" SemanticProperties.Description="Next month">
+                <Grid.GestureRecognizers><TapGestureRecognizer Command="{Binding NextMonthCommand}" /></Grid.GestureRecognizers>
+                <Image Source="chevron_right.png" WidthRequest="24" HeightRequest="24" HorizontalOptions="Center" VerticalOptions="Center" />
+            </Grid>
         </Grid>
     </Border>
 </ContentView>

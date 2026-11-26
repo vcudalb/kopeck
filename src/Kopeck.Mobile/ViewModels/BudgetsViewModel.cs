@@ -14,7 +14,10 @@ public partial class BudgetsViewModel(
     public ObservableCollection<BudgetItem> Items { get; } = [];
 
     [ObservableProperty] private string _newName = "";
-    [ObservableProperty] private string _newCurrency = "EUR";
+    [ObservableProperty] private string _newCurrency = Currencies.Default;
+
+    /// <summary>Offered in the currency picker. It is the default for the income streams and savings pots of the budget.</summary>
+    public IReadOnlyList<string> CurrencyOptions => Currencies.Common;
     [ObservableProperty] private bool _isEmpty;
 
     public string Greeting => $"Hi, {session.DisplayName}";
@@ -26,13 +29,13 @@ public partial class BudgetsViewModel(
         IsEmpty = Items.Count == 0;
     });
 
-    protected override void OnFormOpening() => (NewName, NewCurrency) = ("", "EUR");
+    protected override void OnFormOpening() => (NewName, NewCurrency) = ("", Currencies.Default);
 
     [RelayCommand]
     private Task CreateAsync() => RunAsync(async ct =>
     {
         if (string.IsNullOrWhiteSpace(NewName)) { Error = "Give the budget a name."; return; }
-        var created = await budgets.CreateAsync(new BudgetRequest(NewName.Trim(), NewCurrency.Trim().ToUpperInvariant()), ct);
+        var created = await budgets.CreateAsync(new BudgetRequest(NewName.Trim(), NewCurrency), ct);
         Items.Add(new BudgetItem(created));
         IsEmpty = false;
         IsFormOpen = false;

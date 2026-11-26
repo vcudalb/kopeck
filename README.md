@@ -30,23 +30,26 @@ how much a category went over its plan, multiple income streams, and sharing a b
 | `Left` = `Planned - SUMIF(expenses by category)` | Dashboard "Left" per category, plus **"Over by X"** when spending exceeds plan |
 | Expense list (Amount / Category) | **Expenses** screen: each expense is assigned to a category |
 | Details sheet: Salaries / Other, monthly columns | **Income** screen: any number of revenue streams, entries dated per month |
+| MDL/EUR savings sheet | **Savings** tab: pots (e.g. Emergency fund) with their own currency, target and deposit history |
 | Duplicating last month's sheet | "Copy missing amounts from previous month" on the Plan screen |
 | Sharing the file | **Share dashboard**: invite by email as Viewer or Editor |
 
-Not carried over (kept simple on purpose): the MDL/EUR savings & conversion sheet (a budget has one currency) and the
-"weekly planning" split of Home into W1–W5.
+Not carried over (kept simple on purpose): currency conversion (amounts in different currencies are shown side by side,
+never converted) and the "weekly planning" split of Home into W1–W5.
 
 ## Features
 
 | Area | What you can do |
 |---|---|
 | Account | Register with email, verify with a 6-digit emailed code, sign in, resend the code, forgot / reset password |
-| Budgets | Create budgets (name + currency), open one, delete it (owner), leave a shared one |
-| Categories | Add, rename, delete (refused while expenses use it). Names are unique per budget, case-insensitive |
-| Expenses | Add, **edit** (swipe → Edit) and delete; each expense belongs to a category and a date |
-| Income | Any number of named revenue streams; dated income entries per stream |
+| Budgets | Create budgets (name + default currency picked from a list), open one, delete it (owner), leave a shared one |
+| Categories | Add, rename, delete (refused while expenses use it). Names are unique per budget, case-insensitive. **Star** the ones you use most: they come first in the category list, the expense picker, the Overview and the plan. Stars are personal, so in a shared budget each member has their own |
+| Expenses | Add, **edit** (swipe → Edit) and delete; each expense belongs to a category and a date. The edit sheet shows who added and last changed it, and **History** lists every action: who, when, and each value before → after (kept even after a delete) |
+| Income | Any number of named revenue streams, each in its own currency (the budget's by default); dated income entries per stream |
+| Savings | Pots with a name, currency (the budget's by default) and optional target; add or take out money, see balance, progress and history |
 | Plan | Planned amount per category per month, saved **all-or-nothing**; copy missing amounts from the previous month |
-| Dashboard | Per category: Planned, Spent, Left / Over by, % used, status colour. Totals: income, planned, spent, overspend, net |
+| Dashboard | Per category: Planned, Spent, Left / Over by, % used, status colour, and a **+** that opens a new expense in that category for the month on screen (editors). Totals: income, planned, spent, saved, overspend, left (income − spent − saved), with other currencies listed separately |
+| Charts | Overview: "Where it went" split bar of this month's spending by category. **Year** screen: income vs spent per month, or one category's spent vs planned; tap a month for its numbers; every category's share of the year. Budget currency only |
 | Sharing | Owner invites by email as Viewer (read-only) or Editor (can change data); works for people who register later |
 
 ### Sharing model
@@ -58,8 +61,9 @@ can't be probed.
 
 | Action | Viewer | Editor | Owner |
 |---|:-:|:-:|:-:|
-| See dashboard, categories, expenses, income, plans | ✅ | ✅ | ✅ |
-| Add / edit / delete categories, expenses, income, plans | | ✅ | ✅ |
+| See dashboard, categories, expenses, income, plans, savings | ✅ | ✅ | ✅ |
+| Star categories (personal) | ✅ | ✅ | ✅ |
+| Add / edit / delete categories, expenses, income, plans, savings | | ✅ | ✅ |
 | Rename / delete the budget, manage shares | | | ✅ |
 | Leave the budget | ✅ | ✅ | |
 
@@ -135,10 +139,11 @@ src/
     Budgets/                            Budget, BudgetShare, AccessLevel
     Categories/ Expenses/ Incomes/      Category, Expense, IncomeStream, Income
     Planning/                           PlannedExpense, PlanVsActual + SpendingStatus
+    Savings/                            SavingsPot, SavingsEntry (signed amount: deposit +, withdrawal −)
   Kopeck.Application/
     Abstractions/                       IKopeckDbContext, ICurrentUser, IEmailSender, IPasswordHasher, ITokenService
     Common/                             Result, Error, mappings (domain → DTO), InBudget() query filter
-    Auth/ Budgets/ Categories/ Expenses/ Incomes/ Planning/   one service per feature
+    Auth/ Budgets/ Categories/ Expenses/ Incomes/ Planning/ Savings/   one service per feature
     Validation/                         IRequestValidator<T>, IRequestPipelineExecutor, ValidationResult
       Validators/                       one validator per request (format rules only)
     DependencyInjection.cs              AddApplication() (validators registered by assembly scan)
@@ -198,13 +203,19 @@ A save that loses a race on a unique index (two identical names at once) is turn
 
 ### Mobile app
 
-- **Screens:** Login, Register, Verify, Reset password, Budgets, Dashboard, Expenses, Income, Plan, Categories, Share.
-- **Navigation:** Shell routes; `//login` and `//budgets` are roots, the rest are pushed.
+- **Screens:** Login, Register, Verify, Reset password, Budgets, Dashboard, Expenses, Income, Savings, Savings pot, Plan,
+  Year, Categories, Share.
+- **Charts:** drawn with MAUI `GraphicsView` (`Views/Charts`), no chart library. Colours follow the category (fixed order,
+  a neutral "other" after eight), picked for light or dark and rebuilt when the theme changes; amounts are always shown as text too.
+- **Navigation:** Shell routes; `//login` and `//budgets` are roots. An open budget has five tabs (Overview, Expenses,
+  Income, Savings, More; Android shows at most five). The monthly plan is pushed from Overview ("Edit plan") and More.
 - **State:** `AppState` holds the open budget and month. The JWT lives in secure storage (Keychain / Android Keystore),
   never in preferences. When the server rejects the token, the session expires and the app returns to sign-in.
 - **Requests:** every command runs through `BaseViewModel.RunAsync`, which shows a busy indicator, turns API errors into
   a message, logs unexpected errors, and cancels the request when the page goes away.
 - **New entries** default to today when viewing the current month, otherwise to the first day of the month on screen.
+- **Currencies:** pickers offer `Contracts.Currencies.Common` with the budget currency first. Totals in several currencies
+  are shown side by side (`2,850.00 EUR · 300.00 USD`).
 
 ## API reference
 
@@ -222,15 +233,18 @@ Months are passed as a date (`2026-10-01`); any day in the month works.
 | GET / POST | `/budgets` | signed in | list mine (owned + shared) / create |
 | PUT / DELETE | `/budgets/{id}` | Owner | rename / delete with everything under it |
 | GET | `/budgets/{id}/summary?month=` | Viewer | dashboard for one month |
+| GET | `/budgets/{id}/summary/year?year=` | Viewer | 12 months of income / planned / spent / saved, and per-category totals by month (budget currency) |
 | DELETE | `/budgets/{id}/leave` | Viewer | a shared user leaves |
 | GET / POST | `/budgets/{id}/shares` | Owner | list / share (sharing again changes the role) |
 | DELETE | `/budgets/{id}/shares/{shareId}` | Owner | revoke |
 | GET / POST | `/budgets/{id}/categories` | Viewer / Editor | |
 | PUT / DELETE | `/budgets/{id}/categories/{categoryId}` | Editor | delete → 409 while expenses use it |
+| PUT / DELETE | `/budgets/{id}/categories/{categoryId}/star` | Viewer | star / unstar for the caller only; lists, plans and the summary put starred first |
 | GET | `/budgets/{id}/expenses?month=&categoryId=` | Viewer | |
 | POST | `/budgets/{id}/expenses` | Editor | |
 | PUT / DELETE | `/budgets/{id}/expenses/{expenseId}` | Editor | |
-| GET / POST | `/budgets/{id}/income-streams` | Viewer / Editor | |
+| GET | `/budgets/{id}/expenses/{expenseId}/history` | Viewer | who added / changed / deleted it, when, and the values (newest first) |
+| GET / POST | `/budgets/{id}/income-streams` | Viewer / Editor | `currency` is optional (budget currency) |
 | DELETE | `/budgets/{id}/income-streams/{streamId}` | Editor | 409 while it has entries |
 | GET | `/budgets/{id}/incomes?month=` | Viewer | |
 | POST | `/budgets/{id}/incomes` | Editor | |
@@ -238,6 +252,10 @@ Months are passed as a date (`2026-10-01`); any day in the month works.
 | GET | `/budgets/{id}/plans?month=` | Viewer | every category with its planned amount (0 if none) |
 | PUT | `/budgets/{id}/plans` | Editor | one category/month (0 clears it) |
 | PUT | `/budgets/{id}/plans/bulk` | Editor | several categories, one transaction, all or nothing |
+| GET / POST | `/budgets/{id}/savings` | Viewer / Editor | pots with balance; `currency` optional (budget currency) |
+| PUT / DELETE | `/budgets/{id}/savings/{potId}` | Editor | currency changes only while empty (409); delete removes the history |
+| GET / POST | `/budgets/{id}/savings/{potId}/entries` | Viewer / Editor | `kind` Deposit / Withdrawal; can't take out more than the balance (400) |
+| DELETE | `/budgets/{id}/savings/{potId}/entries/{entryId}` | Editor | 409 if it would leave the pot below zero |
 | POST | `/budgets/{id}/plans/copy` | Editor | copy missing plans from one month to another; returns `{ "copied": n }` |
 | GET | `/health` | anonymous | liveness |
 

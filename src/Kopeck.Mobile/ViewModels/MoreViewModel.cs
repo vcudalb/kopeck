@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Kopeck.Mobile.ViewModels;
 
-/// <summary>The "More" tab: budget settings (categories, sharing), switching budget, leaving/deleting it, and the account.</summary>
+/// <summary>The "More" tab: budget settings (monthly plan, categories, sharing), switching budget, leaving/deleting it, and the account.</summary>
 public partial class MoreViewModel(
     IBudgetsApi budgets, IUserSession session, AppState state, INavigationService nav, IDialogService dialogs, ILogger<MoreViewModel> logger)
     : BudgetViewModel(state, dialogs, logger)
@@ -31,6 +31,8 @@ public partial class MoreViewModel(
         OnPropertyChanged(nameof(UserInitial));
     }
 
+    [RelayCommand] private Task OpenPlanAsync() => nav.GoToAsync("plan");
+    [RelayCommand] private Task OpenYearAsync() => nav.GoToAsync("year");
     [RelayCommand] private Task OpenCategoriesAsync() => nav.GoToAsync("categories");
     [RelayCommand] private Task OpenShareAsync() => nav.GoToAsync("share");
     [RelayCommand] private Task SwitchBudgetAsync() => nav.GoToAsync("//budgets");

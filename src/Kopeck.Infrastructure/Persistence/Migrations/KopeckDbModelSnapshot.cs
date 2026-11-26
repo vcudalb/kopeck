@@ -95,6 +95,24 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("Kopeck.Domain.Categories.CategoryStar", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StarredAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "CategoryId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("CategoryStars");
+                });
+
             modelBuilder.Entity("Kopeck.Domain.Expenses.Expense", b =>
                 {
                     b.Property<Guid>("Id")
@@ -111,6 +129,9 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("CreatedByName")
                         .HasMaxLength(80)
                         .HasColumnType("TEXT");
@@ -125,6 +146,16 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedByName")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
@@ -132,6 +163,46 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                     b.HasIndex("BudgetId", "Date");
 
                     b.ToTable("Expenses");
+                });
+
+            modelBuilder.Entity("Kopeck.Domain.History.EntryChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BudgetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ByName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Changes")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BudgetId", "EntryId", "At");
+
+                    b.ToTable("EntryChanges");
                 });
 
             modelBuilder.Entity("Kopeck.Domain.Incomes.Income", b =>
@@ -147,6 +218,16 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("BudgetId")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByName")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly>("Date")
                         .HasColumnType("TEXT");
 
@@ -155,6 +236,16 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("StreamId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedByName")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -173,6 +264,11 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("BudgetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(5)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -215,6 +311,94 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Plans");
+                });
+
+            modelBuilder.Entity("Kopeck.Domain.Savings.SavingsEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BudgetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByName")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PotId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedByName")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PotId");
+
+                    b.HasIndex("BudgetId", "Date");
+
+                    b.ToTable("SavingsEntries");
+                });
+
+            modelBuilder.Entity("Kopeck.Domain.Savings.SavingsPot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BudgetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("Target")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BudgetId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("SavingsPots");
                 });
 
             modelBuilder.Entity("Kopeck.Domain.Users.User", b =>
@@ -304,6 +488,21 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Kopeck.Domain.Categories.CategoryStar", b =>
+                {
+                    b.HasOne("Kopeck.Domain.Categories.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kopeck.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Kopeck.Domain.Expenses.Expense", b =>
                 {
                     b.HasOne("Kopeck.Domain.Budgets.Budget", null)
@@ -319,6 +518,15 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Kopeck.Domain.History.EntryChange", b =>
+                {
+                    b.HasOne("Kopeck.Domain.Budgets.Budget", null)
+                        .WithMany()
+                        .HasForeignKey("BudgetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Kopeck.Domain.Incomes.Income", b =>
@@ -358,6 +566,30 @@ namespace Kopeck.Infrastructure.Persistence.Migrations
                     b.HasOne("Kopeck.Domain.Categories.Category", null)
                         .WithMany()
                         .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kopeck.Domain.Savings.SavingsEntry", b =>
+                {
+                    b.HasOne("Kopeck.Domain.Budgets.Budget", null)
+                        .WithMany()
+                        .HasForeignKey("BudgetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kopeck.Domain.Savings.SavingsPot", null)
+                        .WithMany()
+                        .HasForeignKey("PotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kopeck.Domain.Savings.SavingsPot", b =>
+                {
+                    b.HasOne("Kopeck.Domain.Budgets.Budget", null)
+                        .WithMany()
+                        .HasForeignKey("BudgetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

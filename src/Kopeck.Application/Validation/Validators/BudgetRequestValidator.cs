@@ -9,6 +9,6 @@ public sealed class BudgetRequestValidator : IRequestValidator<BudgetRequest>
     public Task<ValidationResult> ValidateAsync(BudgetRequest request, CancellationToken cancellationToken = default) =>
         new ValidationResult()
             .AddErrorIf(!DomainRules.IsValidName(request.Name), nameof(request.Name), ValidationMessages.NameRequired("budget"))
-            .AddErrorIf(DomainRules.NormalizeCurrency(request.Currency) is null, nameof(request.Currency), "Enter a currency code such as EUR or MDL.")
+            .AddErrorIf(DomainRules.NormalizeCurrency(request.Currency) is null, nameof(request.Currency), ValidationMessages.InvalidCurrency)
             .AsTask();
 }

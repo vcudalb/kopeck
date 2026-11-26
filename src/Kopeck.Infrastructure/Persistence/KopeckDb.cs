@@ -2,8 +2,10 @@ using Kopeck.Application.Abstractions;
 using Kopeck.Domain.Budgets;
 using Kopeck.Domain.Categories;
 using Kopeck.Domain.Expenses;
+using Kopeck.Domain.History;
 using Kopeck.Domain.Incomes;
 using Kopeck.Domain.Planning;
+using Kopeck.Domain.Savings;
 using Kopeck.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,10 +18,14 @@ public class KopeckDb(DbContextOptions<KopeckDb> options) : DbContext(options), 
     public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<BudgetShare> Shares => Set<BudgetShare>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<CategoryStar> CategoryStars => Set<CategoryStar>();
     public DbSet<IncomeStream> IncomeStreams => Set<IncomeStream>();
     public DbSet<Income> Incomes => Set<Income>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<PlannedExpense> Plans => Set<PlannedExpense>();
+    public DbSet<SavingsPot> SavingsPots => Set<SavingsPot>();
+    public DbSet<SavingsEntry> SavingsEntries => Set<SavingsEntry>();
+    public DbSet<EntryChange> EntryChanges => Set<EntryChange>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(KopeckDb).Assembly);

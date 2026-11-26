@@ -8,17 +8,19 @@ using Microsoft.EntityFrameworkCore;
 namespace Kopeck.Application.Planning;
 
 /// <summary>Planned spend per category per month (the Excel "Planned" column).</summary>
-public sealed class PlanService(IKopeckDbContext db) : IPlanService
+public sealed class PlanService(IKopeckDbContext db, ICurrentUser user) : IPlanService
 {
     private static readonly Error UnknownCategory = Error.Validation("Unknown category.");
 
-    /// <summary>Every category with its planned amount for the month (0 when not planned yet).</summary>
+    /// <summary>Every category with its planned amount for the month (0 when not planned yet); the caller's starred ones first.</summary>
     public async Task<IReadOnlyList<PlanDto>> ListAsync(Guid budgetId, DateOnly month, CancellationToken ct)
     {
         var m = month.FirstOfMonth();
         var categories = await db.Categories.AsNoTracking().InBudget(budgetId).OrderBy(c => c.Name).ToListAsync(ct);
         var plans = await db.Plans.AsNoTracking().InBudget(budgetId).Where(p => p.Month == m).ToDictionaryAsync(p => p.CategoryId, p => p.Amount, ct);
-        return categories.Select(c => new PlanDto(c.Id, c.Name, plans.GetValueOrDefault(c.Id))).ToList();
+        var starred = await db.StarredInAsync(user.Id, budgetId, ct);
+        return categories.Select(c => new PlanDto(c.Id, c.Name, plans.GetValueOrDefault(c.Id), starred.Contains(c.Id)))
+            .OrderByDescending(p => p.IsStarred).ToList();
     }
 
     /// <summary>Upsert of one category/month (0 clears it).</summary>

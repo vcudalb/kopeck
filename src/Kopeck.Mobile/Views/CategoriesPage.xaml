@@ -12,6 +12,8 @@
             <VerticalStackLayout Spacing="8">
                 <Label Text="Group your expenses, e.g. Home, Bills, Fuel. Tap one to rename it, swipe left to delete."
                        Style="{StaticResource Caption}" Padding="4,0" IsVisible="{Binding CanEdit}" />
+                <Label Text="Star the ones you use most: they come first when adding an expense, on the Overview and in the plan. Stars are yours only."
+                       Style="{StaticResource Caption}" Padding="4,0" />
                 <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
                     <Label Text="{Binding Error}" Style="{StaticResource ErrorLabel}" />
                 </Border>
@@ -44,9 +46,19 @@
                                     <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=RenameCommand}"
                                                           CommandParameter="{Binding .}" />
                                 </Border.GestureRecognizers>
-                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
                                     <Image Source="ic_tag.png" WidthRequest="20" HeightRequest="20" />
                                     <Label Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Strong}" VerticalOptions="Center" />
+                                    <!-- a 44pt target around the 22pt star -->
+                                    <Grid Grid.Column="2" WidthRequest="44" HeightRequest="44" Margin="0,-10,-8,-10"
+                                          SemanticProperties.Description="Star or unstar">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=ToggleStarCommand}"
+                                                                  CommandParameter="{Binding .}" />
+                                        </Grid.GestureRecognizers>
+                                        <Image Source="star_on.png" WidthRequest="22" HeightRequest="22" IsVisible="{Binding IsStarred}" />
+                                        <Image Source="star_off.png" WidthRequest="22" HeightRequest="22" IsVisible="{Binding IsStarred, Converter={StaticResource InvertBool}}" />
+                                    </Grid>
                                 </Grid>
                             </Border>
                         </SwipeView>

@@ -3,15 +3,13 @@ using Kopeck.Domain.Common;
 
 namespace Kopeck.Domain.Expenses;
 
-public sealed class Expense : IBudgetOwned
+public sealed class Expense : AuditedEntity, IBudgetOwned
 {
     private Expense() { }   // EF Core
 
-    public Expense(Guid budgetId, Guid categoryId, DateOnly date, decimal amount, string? note, Guid createdByUserId, string createdByName)
+    public Expense(Guid budgetId, Guid categoryId, DateOnly date, decimal amount, string? note)
     {
         BudgetId = budgetId;
-        CreatedByUserId = createdByUserId;
-        CreatedByName = createdByName;
         Update(categoryId, date, amount, note);
     }
 
@@ -22,8 +20,6 @@ public sealed class Expense : IBudgetOwned
     public DateOnly Date { get; private set; }
     public decimal Amount { get; private set; }
     public string? Note { get; private set; }
-    public Guid? CreatedByUserId { get; private set; }
-    public string? CreatedByName { get; private set; }
 
     public void Update(Guid categoryId, DateOnly date, decimal amount, string? note) =>
         (CategoryId, Date, Amount, Note) = (categoryId, date, amount, DomainRules.CleanNote(note));

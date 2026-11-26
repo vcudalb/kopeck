@@ -3,7 +3,7 @@ using Kopeck.Domain.Common;
 namespace Kopeck.Domain.Incomes;
 
 /// <summary>Money received on a date, booked against one stream.</summary>
-public sealed class Income : IBudgetOwned
+public sealed class Income : AuditedEntity, IBudgetOwned
 {
     private Income() { }   // EF Core
 

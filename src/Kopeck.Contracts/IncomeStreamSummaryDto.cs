@@ -1,3 +1,3 @@
 namespace Kopeck.Contracts;
 
-public record IncomeStreamSummaryDto(Guid StreamId, string Name, decimal Amount);
+public record IncomeStreamSummaryDto(Guid StreamId, string Name, decimal Amount, string Currency);

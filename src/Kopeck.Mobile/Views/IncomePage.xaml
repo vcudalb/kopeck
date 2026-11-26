@@ -50,8 +50,16 @@
                                             <Label Text="{Binding Note}" Style="{StaticResource Caption}" LineBreakMode="TailTruncation" />
                                         </VerticalStackLayout>
                                         <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                                            <Label Text="{Binding Amount, StringFormat='+{0:N2}'}" Style="{StaticResource Strong}"
-                                                   TextColor="{StaticResource Primary}" HorizontalOptions="End" />
+                                            <Label Style="{StaticResource Strong}" TextColor="{StaticResource Primary}" HorizontalOptions="End">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="{Binding Amount, StringFormat='+{0:N2}'}" />
+                                                        <!-- a trailing space in StringFormat is trimmed, so the gap is its own span -->
+                                                        <Span Text=" " />
+                                                        <Span Text="{Binding Currency}" />
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
                                             <Label Text="{Binding Date, StringFormat='{0:d MMM}'}" Style="{StaticResource Caption}" HorizontalOptions="End" />
                                         </VerticalStackLayout>
                                     </Grid>
@@ -89,7 +97,7 @@
                                 SelectedItem="{Binding SelectedStream}" />
                     </Border>
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
-                        <Label Text="Amount" Style="{StaticResource FieldLabel}" />
+                        <Label Text="{Binding AmountLabel}" Style="{StaticResource FieldLabel}" />
                         <Label Grid.Column="1" Text="Date" Style="{StaticResource FieldLabel}" />
                         <Border Grid.Row="1" Style="{StaticResource Field}">
                             <Entry Placeholder="0.00" Keyboard="Numeric" Text="{Binding Amount}" />

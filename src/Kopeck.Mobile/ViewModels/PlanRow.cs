@@ -8,6 +8,7 @@ public partial class PlanRow(PlanDto plan) : ObservableObject
 {
     public Guid CategoryId { get; } = plan.CategoryId;
     public string Name { get; } = plan.CategoryName;
+    public bool IsStarred { get; } = plan.IsStarred;
     public decimal OriginalAmount { get; } = plan.Amount;
 
     [ObservableProperty]

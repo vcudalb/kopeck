@@ -13,6 +13,7 @@ internal sealed class IncomeConfiguration : IEntityTypeConfiguration<Income>
         e.HasIndex(x => new { x.BudgetId, x.Date });
         e.Property(x => x.Amount).IsMoney();
         e.Property(x => x.Note).HasMaxLength(DomainRules.MaxNoteLength);
+        e.IsAudited();
         e.HasOne(x => x.Stream).WithMany().HasForeignKey(x => x.StreamId).OnDelete(DeleteBehavior.NoAction);
     }
 }

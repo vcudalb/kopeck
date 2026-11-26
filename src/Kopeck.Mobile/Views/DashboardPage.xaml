@@ -5,8 +5,30 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Kopeck.Mobile.ViewModels"
              xmlns:controls="clr-namespace:Kopeck.Mobile.Views.Controls"
+             xmlns:charts="clr-namespace:Kopeck.Mobile.Views.Charts"
              x:DataType="vm:DashboardViewModel"
              Title="{Binding BudgetName}">
+    <ContentPage.Resources>
+        <!-- One figure in the hero card's bottom row -->
+        <Style x:Key="HeroStatLabel" TargetType="Label">
+            <Setter Property="TextColor" Value="{StaticResource OnPrimary}" />
+            <Setter Property="Opacity" Value="0.85" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style x:Key="HeroStatValue" TargetType="Label">
+            <Setter Property="TextColor" Value="{StaticResource OnPrimary}" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="LineBreakMode" Value="NoWrap" />
+        </Style>
+        <!-- Section title with a link on the right -->
+        <Style x:Key="SectionLink" TargetType="Button" BasedOn="{StaticResource TextButton}">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="HeightRequest" Value="32" />
+            <Setter Property="Padding" Value="8,0" />
+        </Style>
+    </ContentPage.Resources>
+
     <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
         <ScrollView>
             <VerticalStackLayout Padding="16" Spacing="12">
@@ -23,19 +45,25 @@
                         <VerticalStackLayout Spacing="2">
                             <Label Text="{Binding NetCaption}" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="13" />
                             <Label Text="{Binding NetText}" TextColor="{StaticResource OnPrimary}" FontSize="32" FontAttributes="Bold" />
+                            <Label Text="{Binding OtherCurrenciesText}" TextColor="{StaticResource OnPrimary}" FontSize="13"
+                                   IsVisible="{Binding HasOtherCurrencies}" />
                         </VerticalStackLayout>
-                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
                             <VerticalStackLayout>
-                                <Label Text="Income" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="12" />
-                                <Label Text="{Binding IncomeText}" TextColor="{StaticResource OnPrimary}" FontAttributes="Bold" />
+                                <Label Text="Income" Style="{StaticResource HeroStatLabel}" />
+                                <Label Text="{Binding IncomeText}" Style="{StaticResource HeroStatValue}" />
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="1">
-                                <Label Text="Planned" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="12" />
-                                <Label Text="{Binding PlannedText}" TextColor="{StaticResource OnPrimary}" FontAttributes="Bold" />
+                                <Label Text="Planned" Style="{StaticResource HeroStatLabel}" />
+                                <Label Text="{Binding PlannedText}" Style="{StaticResource HeroStatValue}" />
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="2">
-                                <Label Text="Spent" TextColor="{StaticResource OnPrimary}" Opacity="0.85" FontSize="12" />
-                                <Label Text="{Binding SpentText}" TextColor="{StaticResource OnPrimary}" FontAttributes="Bold" />
+                                <Label Text="Spent" Style="{StaticResource HeroStatLabel}" />
+                                <Label Text="{Binding SpentText}" Style="{StaticResource HeroStatValue}" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="3">
+                                <Label Text="Saved" Style="{StaticResource HeroStatLabel}" />
+                                <Label Text="{Binding SavedText}" Style="{StaticResource HeroStatValue}" />
                             </VerticalStackLayout>
                         </Grid>
                     </VerticalStackLayout>
@@ -45,10 +73,40 @@
                     <Label Text="{Binding OverText}" Style="{StaticResource ErrorLabel}" FontAttributes="Bold" />
                 </Border>
 
+                <!-- Where it went: this month's spending by category -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="WHERE IT WENT" Style="{StaticResource SectionHeader}" VerticalOptions="Center" />
+                    <Button Grid.Column="1" Text="Year view" Command="{Binding OpenYearCommand}" Style="{StaticResource SectionLink}" />
+                </Grid>
+                <Border Style="{StaticResource Card}" Padding="16,14">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Nothing spent this month yet." Style="{StaticResource Muted}"
+                               IsVisible="{Binding HasSpending, Converter={StaticResource InvertBool}}" />
+                        <charts:ChartView Chart="{Binding SpendChart}" HeightRequest="14" IsVisible="{Binding HasSpending}"
+                                          SemanticProperties.Description="Spending this month split by category; the amounts are listed below" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding SpendRows}" Spacing="8" IsVisible="{Binding HasSpending}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ShareRow">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,52" ColumnSpacing="10">
+                                        <RoundRectangle Fill="{Binding Color}" CornerRadius="3" WidthRequest="12" HeightRequest="12" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="{Binding Name}" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                        <Label Grid.Column="2" Text="{Binding AmountText}" Style="{StaticResource Strong}" VerticalOptions="Center" />
+                                        <Label Grid.Column="3" Text="{Binding PercentText}" Style="{StaticResource Caption}"
+                                               HorizontalOptions="End" VerticalOptions="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
                 <!-- Categories: planned vs real -->
-                <Label Text="CATEGORIES" Style="{StaticResource SectionHeader}" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="CATEGORIES" Style="{StaticResource SectionHeader}" VerticalOptions="Center" />
+                    <Button Grid.Column="1" Text="Edit plan" Command="{Binding OpenPlanCommand}" Style="{StaticResource SectionLink}" />
+                </Grid>
                 <Border Style="{StaticResource Card}" IsVisible="{Binding HasRows, Converter={StaticResource InvertBool}}">
-                    <Label Text="No categories yet. Add them under More → Categories, then set amounts on the Plan tab."
+                    <Label Text="No categories yet. Add them under More → Categories, then tap Edit plan to set amounts."
                            Style="{StaticResource Muted}" />
                 </Border>
                 <VerticalStackLayout BindableLayout.ItemsSource="{Binding Rows}" Spacing="8">
@@ -56,9 +114,20 @@
                         <DataTemplate x:DataType="vm:CategoryRow">
                             <Border Style="{StaticResource Card}" Padding="14">
                                 <VerticalStackLayout Spacing="8">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <Label Text="{Binding Name}" Style="{StaticResource Strong}" LineBreakMode="TailTruncation" />
-                                        <Label Grid.Column="1" Text="{Binding PercentText}" Style="{StaticResource Caption}" FontAttributes="Bold" />
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                        <Image Source="star_on.png" WidthRequest="14" HeightRequest="14" Margin="0,0,6,0" IsVisible="{Binding IsStarred}" />
+                                        <Label Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Strong}" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+                                        <Label Grid.Column="2" Text="{Binding PercentText}" Style="{StaticResource Caption}" FontAttributes="Bold" VerticalOptions="Center" />
+                                        <!-- add an expense to this category: a 44pt target around a 24pt icon, editors only -->
+                                        <Grid Grid.Column="3" WidthRequest="44" HeightRequest="44" Margin="4,-10,-10,-10"
+                                              IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=CanEdit}"
+                                              SemanticProperties.Description="Add an expense to this category">
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=AddExpenseCommand}"
+                                                                      CommandParameter="{Binding .}" />
+                                            </Grid.GestureRecognizers>
+                                            <Image Source="ic_add_circle.png" WidthRequest="24" HeightRequest="24" />
+                                        </Grid>
                                     </Grid>
                                     <ProgressBar Progress="{Binding Progress}" ProgressColor="{Binding StatusColor}" />
                                     <Grid ColumnDefinitions="*,Auto">
@@ -78,6 +147,28 @@
                         <Label Text="No income this month yet." Style="{StaticResource Muted}" Padding="0,10"
                                IsVisible="{Binding HasStreams, Converter={StaticResource InvertBool}}" />
                         <VerticalStackLayout BindableLayout.ItemsSource="{Binding Streams}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:AmountRow">
+                                    <Grid ColumnDefinitions="*,Auto" Padding="0,10">
+                                        <Label Text="{Binding Name}" />
+                                        <Label Grid.Column="1" Text="{Binding AmountText}" Style="{StaticResource Strong}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Saved this month -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="SAVED THIS MONTH" Style="{StaticResource SectionHeader}" VerticalOptions="Center" />
+                    <Button Grid.Column="1" Text="All savings" Command="{Binding OpenSavingsCommand}" Style="{StaticResource SectionLink}" />
+                </Grid>
+                <Border Style="{StaticResource Card}" Padding="16,6">
+                    <VerticalStackLayout>
+                        <Label Text="Nothing saved this month yet." Style="{StaticResource Muted}" Padding="0,10"
+                               IsVisible="{Binding HasSavings, Converter={StaticResource InvertBool}}" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Savings}">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="vm:AmountRow">
                                     <Grid ColumnDefinitions="*,Auto" Padding="0,10">

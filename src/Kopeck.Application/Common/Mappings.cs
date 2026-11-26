@@ -5,6 +5,7 @@ using Kopeck.Domain.Common;
 using Kopeck.Domain.Expenses;
 using Kopeck.Domain.Incomes;
 using Kopeck.Domain.Planning;
+using Kopeck.Domain.Savings;
 
 namespace Kopeck.Application.Common;
 
@@ -43,11 +44,25 @@ public static class Mappings
         _ => throw new ArgumentOutOfRangeException(nameof(status), status, null),
     };
 
-    public static CategoryDto ToDto(this Category c) => new(c.Id, c.Name, c.Color);
-    public static IncomeStreamDto ToDto(this IncomeStream s) => new(s.Id, s.Name);
+    public static CategoryDto ToDto(this Category c, bool isStarred = false) => new(c.Id, c.Name, c.Color, isStarred);
+    public static IncomeStreamDto ToDto(this IncomeStream s) => new(s.Id, s.Name, s.Currency);
     public static ShareDto ToDto(this BudgetShare s) => new(s.Id, s.Email, s.Role.ToShareRole());
-    public static ExpenseDto ToDto(this Expense e, string categoryName) => new(e.Id, e.CategoryId, categoryName, e.Date, e.Amount, e.Note, e.CreatedByName);
-    public static IncomeDto ToDto(this Income i, string streamName) => new(i.Id, i.StreamId, streamName, i.Date, i.Amount, i.Note);
+    public static ExpenseDto ToDto(this Expense e, string categoryName) => new(e.Id, e.CategoryId, categoryName, e.Date, e.Amount, e.Note, e.CreatedByName,
+        Utc(e.CreatedAt), e.UpdatedAt is { } u ? Utc(u) : null, e.UpdatedByName);
+    public static IncomeDto ToDto(this Income i, IncomeStream stream) => new(i.Id, i.StreamId, stream.Name, i.Date, i.Amount, i.Note, stream.Currency,
+        i.CreatedByName, Utc(i.CreatedAt));
+    public static SavingsPotDto ToDto(this SavingsPot p, decimal balance) => new(p.Id, p.Name, p.Color, p.Currency, p.Target, balance);
+    public static SavingsEntryDto ToDto(this SavingsEntry e) => new(e.Id, e.PotId, e.Date, e.Amount, e.Note, e.CreatedByName, Utc(e.CreatedAt));
+
+    public static EntryChangeDto ToDto(this Kopeck.Domain.History.EntryChange c) => new(c.Action switch
+        {
+            Kopeck.Domain.History.EntryAction.Created => EntryAction.Created,
+            Kopeck.Domain.History.EntryAction.Updated => EntryAction.Updated,
+            _ => EntryAction.Deleted,
+        }, Utc(c.At), c.ByName, c.Changes.Select(f => new FieldChangeDto(f.Field, f.Old, f.New)).ToList());
+
+    /// <summary>SQLite gives times back without a kind; they are stored as UTC.</summary>
+    public static DateTime Utc(DateTime t) => DateTime.SpecifyKind(t, DateTimeKind.Utc);
 
     /// <summary>Rows of one budget. Every query on budget data goes through here, so none can forget the budget filter.</summary>
     public static IQueryable<T> InBudget<T>(this IQueryable<T> query, Guid budgetId) where T : class, IBudgetOwned =>

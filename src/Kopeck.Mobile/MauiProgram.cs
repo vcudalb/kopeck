@@ -41,6 +41,7 @@ public static class MauiProgram
         services.AddSingleton<IIncomeApi, IncomeApi>();
         services.AddSingleton<IPlansApi, PlansApi>();
         services.AddSingleton<ISharesApi, SharesApi>();
+        services.AddSingleton<ISavingsApi, SavingsApi>();
 
         // Screens: a new page + view model each time they are opened.
         AddScreen<LoginPage, LoginViewModel>(services);
@@ -52,8 +53,12 @@ public static class MauiProgram
         AddScreen<ExpensesPage, ExpensesViewModel>(services);
         AddScreen<IncomePage, IncomeViewModel>(services);
         AddScreen<PlanPage, PlanViewModel>(services);
+        AddScreen<YearPage, YearViewModel>(services);
         AddScreen<CategoriesPage, CategoriesViewModel>(services);
         AddScreen<SharePage, ShareViewModel>(services);
+        AddScreen<SavingsPage, SavingsViewModel>(services);
+        AddScreen<SavingsPotPage, SavingsPotViewModel>(services);
+        AddScreen<HistoryPage, HistoryViewModel>(services);
         AddScreen<MorePage, MoreViewModel>(services);
 
         RemoveNativeInputUnderline();
