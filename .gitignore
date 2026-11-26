@@ -6,3 +6,5 @@ obj/
 *.user
 # JetBrains Rider (per-machine IDE settings)
 .idea/
+TestResults/
+badges/

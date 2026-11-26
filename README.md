@@ -1,5 +1,12 @@
 # Kopeck (.NET MAUI + ASP.NET Core)
 
+[![CI](https://github.com/vcudalb/kopeck/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/vcudalb/kopeck/actions/workflows/ci.yml?query=branch%3Adevelop)
+[![Tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvcudalb%2Fkopeck%2Fbadges%2Ftests.json)](https://github.com/vcudalb/kopeck/actions/workflows/ci.yml?query=branch%3Adevelop)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvcudalb%2Fkopeck%2Fbadges%2Fcoverage.json)](https://github.com/vcudalb/kopeck/actions/workflows/ci.yml?query=branch%3Adevelop)
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS-512BD4)](#run-it)
+[![License: MIT](https://img.shields.io/github/license/vcudalb/kopeck)](LICENSE)
+
 A mobile budgeting app that replaces the "Main Buget.xlsx" workflow: categories with a monthly plan, "Left" per category,
 how much a category went over its plan, multiple income streams, and sharing a budget with other people.
 
@@ -379,7 +386,7 @@ for a single instance.
 
 ## Tests and CI
 
-**39 tests** in `tests/Kopeck.Api.Tests` (xUnit):
+**53 tests** in `tests/Kopeck.Api.Tests` (xUnit); the live count and line coverage are in the badges at the top:
 
 - **Unit:** planned-vs-actual maths and status, email codes (single use, expiry, attempt lock), account lockout,
   password policy, email/currency rules, budget access levels, log masking.
@@ -388,7 +395,16 @@ for a single instance.
   decimal validation, all-or-nothing bulk plan save, expense edit within the same budget.
 
 **GitHub Actions** (`.github/workflows/ci.yml`): API build and tests on every PR and on `develop`; Android build;
-iOS build is manual (`workflow_dispatch`) because it needs a macOS runner.
+iOS build is manual (`workflow_dispatch`) because it needs a macOS runner. Each run's summary page shows the test
+counts, any failed tests and line coverage per assembly (`.github/scripts/test_report.py`, standard-library Python).
+Pushes to `develop` also write `tests.json` and `coverage.json` to the orphan `badges` branch, which the README badges
+read through shields.io; that job is the only one with write access.
+
+Coverage locally (EF migrations are excluded by `tests/coverage.runsettings`):
+
+```bash
+dotnet test tests/Kopeck.Api.Tests --collect:"XPlat Code Coverage" --settings tests/coverage.runsettings --results-directory TestResults
+```
 
 **Quality gates:** `Directory.Build.props` enables nullable reference types, latest analyzers and code-style checks, and
 turns warnings into errors for every project except the MAUI app; `.editorconfig` sets the style.
